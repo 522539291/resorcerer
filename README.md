@@ -14,14 +14,37 @@ With `resorcerer` we want to contribute to the advancement of VPAs. It's a simpl
 
 ## Setup
 
+The following assumes OpenShift 1.5 or later.
+
+### Prometheus
+
+```
+$ oc new-project resorcerer
+$ oc apply -f deployments/all-cadvisor.yaml
+$ oc create configmap prom-config-cm --from-file=deployments/prometheus.yaml
+$ oc apply -f deployments/all-prometheus.yaml
+$ oc expose service cadvisor
+$ oc expose service prometheus
+$ oc get routes
+```
+
+### The resorcerer app
+
+```
+$ oc project # make sure that you're in the resorcerer project
+$ oc apply -f deployments/all-resorcerer.yaml
+```
+
+### Development
+
 We don't do binary releases, you need Go 1.8 and [dep](https://github.com/golang/dep) to build it for your platform. If you don't have `dep` installed yet, do `go get -u github.com/golang/dep/cmd/dep` now and then:
 
 ```
 $ dep ensure
 ```
 
-Now you can use the Makefile to build the binaries and containers as you see fit.
+Now you can use the Makefile to build the binaries and container image as you see fit, for example, `make release`.
 
 ## Usage
 
- 
+TBD.

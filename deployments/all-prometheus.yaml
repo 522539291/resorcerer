@@ -1,0 +1,99 @@
+apiVersion:                          v1
+items:
+- apiVersion:                        v1
+  kind:                              ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by:     OpenShiftNewApp
+    creationTimestamp:               null
+    labels:
+      app:                           prometheus
+    name:                            prometheus
+  spec:
+    dockerImageRepository:           prom/prometheus
+  status:
+    dockerImageRepository:           ""
+- apiVersion:                        v1
+  kind:                              DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by:     OpenShiftNewApp
+    creationTimestamp:               null
+    labels:
+      app:                           prometheus
+    name:                            prometheus
+  spec:
+    replicas:                        1
+    selector:
+      app:                           prometheus
+      deploymentconfig:              prometheus
+    strategy:
+      resources:                     {}
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp:           null
+        labels:
+          app:                       prometheus
+          deploymentconfig:          prometheus
+      spec:
+        containers:
+        - image:                     prom/prometheus
+          name:                      prometheus
+          ports:
+          - containerPort:           9090
+            protocol:                TCP
+          resources:                 {}
+          volumeMounts:
+          - name:                    prometheus-volume-1
+            mountPath:               /prometheus
+          - name:                    prom-config-volume
+            mountPath:               /etc/prometheus/
+        volumes:
+        - name:                      prometheus-volume-1
+          emptyDir:                  {}
+        - name:                      prom-config-volume
+          configMap:
+            name:                    prom-config-cm
+            defaultMode:             420
+    test:                            false
+    triggers:
+    - type:                          ConfigChange
+    - imageChangeParams:
+        automatic:                   true
+        containerNames:
+        - prometheus
+        from:
+          kind:                      ImageStreamTag
+          name:                      prometheus:latest
+      type:                          ImageChange
+  status:
+    availableReplicas:               0
+    latestVersion:                   0
+    observedGeneration:              0
+    replicas:                        0
+    unavailableReplicas:             0
+    updatedReplicas:                 0
+- apiVersion:                        v1
+  kind:                              Service
+  metadata:
+    annotations:
+      openshift.io/generated-by:     OpenShiftNewApp
+    creationTimestamp:               null
+    labels:
+      app:                           prometheus
+    name:                            prometheus
+  spec:
+    ports:
+    - name:                          9090-tcp
+      port:                          9090
+      protocol:                      TCP
+      targetPort:                    9090
+    selector:
+      app:                           prometheus
+      deploymentconfig:              prometheus
+  status:
+    loadBalancer:                    {}
+kind:                                List
+metadata:                            {}

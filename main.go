@@ -14,10 +14,10 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	var promep string
+	if promep = os.Getenv("PROM_API"); promep != "" {
 		log.Fatalf("Need Prometheus endpoint address")
 	}
-	promep := os.Args[1]
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		log.Fatalf("Can't connect to Prometheus: %s", err)

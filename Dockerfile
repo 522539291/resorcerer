@@ -8,5 +8,4 @@ WORKDIR /app
 RUN chown -R 1001:1 /app
 USER 1001
 COPY resorcerer .
-RUN chmod +x resorcerer
 CMD ["/app/resorcerer"]
