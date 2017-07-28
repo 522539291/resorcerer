@@ -18,7 +18,8 @@ The following assumes OpenShift 1.5 or later.
 
 ### Prometheus
 
-Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/) we set up our Prometheus environment as follows:
+Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/)
+we set up our Prometheus environment as follows (or you simply launch `./promup.sh` which includes the following steps):
 
 ```
 $ oc new-project resorcerer
@@ -41,6 +42,8 @@ NAME            REVISION   DESIRED   CURRENT   TRIGGERED BY
 dc/cadvisor     1          1         1         config,image(cadvisor:latest)
 dc/prometheus   1          1         1         config,image(prometheus:latest)
 ```
+
+When done, don't forgot to clean up with `oc delete project resorcerer`.
 
 ### The resorcerer app
 

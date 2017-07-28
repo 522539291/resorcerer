@@ -49,7 +49,7 @@ items:
           - name:                    prometheus-volume-1
             mountPath:               /prometheus
           - name:                    prom-config-volume
-            mountPath:               /etc/prometheus/
+            mountPath:               "/etc/prometheus/"
         volumes:
         - name:                      prometheus-volume-1
           emptyDir:                  {}
