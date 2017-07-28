@@ -45,8 +45,13 @@ dc/prometheus   1          1         1         config,image(prometheus:latest)
 
 From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph` for me (since I'm using Minishift for development).
 
-If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
+To make sure that both Prometheus and resorcerer can [access](https://docs.openshift.org/latest/admin_guide/service_accounts.html) all the metrics, do:
 
+```
+$ oc policy add-role-to-user view system:serviceaccount:default:resorcerer
+```
+
+If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
 
 ### Launch the resorcerer infra cluster daemon
 
@@ -75,7 +80,6 @@ $ make release  # cut a new release (push to Quay)
 ```
 
 Note that when run locally for development purposes you want to set something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io`.
-
 
 PQL:
 
