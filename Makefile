@@ -2,7 +2,7 @@ rversion := 0.1.0
 
 .PHONY: build crelease cbuild cpush
 
-crelease : bbuild cbuild cpush
+release : bbuild cbuild cpush
 
 bbuild:
 	GOOS=linux GOARCH=amd64 go build -o ./resorcerer
