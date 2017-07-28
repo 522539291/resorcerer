@@ -18,6 +18,8 @@ The following assumes OpenShift 1.5 or later.
 
 ### Prometheus
 
+Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/) we set up our Prometheus environment as follows:
+
 ```
 $ oc new-project resorcerer
 $ oc apply -f deployments/all-cadvisor.yaml
