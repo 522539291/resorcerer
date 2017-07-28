@@ -84,9 +84,15 @@ Note that when run locally for development purposes you want to set something li
 PromQL examples (see also the [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) exposes):
 
 ```
+# average Resident Set Size (RSS), excl. swapped out memory:
+avg(container_memory_rss)
+
 # the maximum value of current memory usage in bytes over the last 100 minutes:
 max_over_time(container_memory_usage_bytes{}[100m])
 
 # the 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over the last 60 seconds:
 quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
+
+# the 5 largest RSS entries:
+topk(5,container_memory_rss)
 ```
