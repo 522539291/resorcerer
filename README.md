@@ -25,7 +25,19 @@ $ oc create configmap prom-config-cm --from-file=deployments/prometheus.yaml
 $ oc apply -f deployments/all-prometheus.yaml
 $ oc expose service cadvisor
 $ oc expose service prometheus
-$ oc get routes
+
+$ oc get routes,svc,dc
+NAME                HOST/PORT                                     PATH      SERVICES     PORT       TERMINATION   WILDCARD
+routes/cadvisor     cadvisor-resorcerer.192.168.99.100.nip.io               cadvisor     8080-tcp                 None
+routes/prometheus   prometheus-resorcerer.192.168.99.100.nip.io             prometheus   9090-tcp                 None
+
+NAME             CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+svc/cadvisor     172.30.88.229    <none>        8080/TCP   1m
+svc/prometheus   172.30.114.121   <none>        9090/TCP   42s
+
+NAME            REVISION   DESIRED   CURRENT   TRIGGERED BY
+dc/cadvisor     1          1         1         config,image(cadvisor:latest)
+dc/prometheus   1          1         1         config,image(prometheus:latest)
 ```
 
 ### The resorcerer app
