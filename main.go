@@ -16,7 +16,8 @@ import (
 func main() {
 	var promep string
 	if promep = os.Getenv("PROM_API"); promep != "" {
-		log.Fatalf("Need Prometheus endpoint address")
+		log.Printf("Can't find a PROM_API environment variable, using default prometheus:9090")
+		promep = "http://prometheus:9090"
 	}
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {

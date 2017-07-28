@@ -1,4 +1,4 @@
-rversion := 0.1.0
+rversion := 0.2.0
 
 .PHONY: build crelease cbuild cpush
 

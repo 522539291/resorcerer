@@ -16,7 +16,7 @@ With `resorcerer` we want to contribute to the advancement of VPAs. It's a simpl
 
 The following assumes OpenShift 1.5 or later.
 
-### Prometheus
+### Launch cAdvisor and Prometheus
 
 Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/)
 we set up our Prometheus environment as follows (or you simply launch `./promup.sh` which includes the following steps):
@@ -43,14 +43,21 @@ dc/cadvisor     1          1         1         config,image(cadvisor:latest)
 dc/prometheus   1          1         1         config,image(prometheus:latest)
 ```
 
-When done, don't forgot to clean up with `oc delete project resorcerer`.
+From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph` for me (since I'm using Minishift for development).
 
-### The resorcerer app
+If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
+
+
+### Launch the resorcerer infra cluster daemon
+
+Launch resorcerer as follows (no HTTP API or API, it's a headless daemon):
 
 ```
 $ oc project # make sure that you're in the resorcerer project
 $ oc apply -f deployments/all-resorcerer.yaml
 ```
+
+When done, don't forgot to clean up with `oc delete project resorcerer`.
 
 ### Development
 
