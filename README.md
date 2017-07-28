@@ -67,7 +67,21 @@ We don't do binary releases, you need Go 1.8 and [dep](https://github.com/golang
 $ dep ensure
 ```
 
-Now you can use the Makefile to build the binaries and container image as you see fit, for example, `make release`.
+Now you can use the Makefile to build the binaries and container image as you see fit, for example:
+
+```
+$ go build      # build dev for local testing
+$ make release  # cut a new release (push to Quay)
+```
+
+Note that when run locally for development purposes you want to set something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io`.
+
+
+PQL:
+
+```
+histogram_quantile(0.5, sum(rate(container_cpu_system_seconds_total[1m]))  by (le) )
+```
 
 ## Usage
 
