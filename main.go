@@ -10,8 +10,8 @@ import (
 
 	promapi "github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -36,10 +36,12 @@ func main() {
 	api := promv1.NewAPI(c)
 	log.Printf("Observing resource consumption using %v", api)
 	go func() {
+		delay := 2 * time.Second
 		for {
 			p, err := listpods()
 			if err != nil {
 				log.Printf("Can't get pod list: %s", err)
+				time.Sleep(delay)
 				continue
 			}
 			log.Printf("%s", p)
@@ -47,11 +49,11 @@ func main() {
 			v, err := api.Query(context.Background(), query, time.Now())
 			if err != nil {
 				log.Printf("Can't get data from Prometheus: %s", err)
-				time.Sleep(time.Second * 2)
+				time.Sleep(delay)
 				continue
 			}
 			log.Printf("%s", v)
-			time.Sleep(time.Second * 2)
+			time.Sleep(delay)
 		}
 	}()
 	<-done
@@ -67,7 +69,7 @@ func listpods() ([]string, error) {
 	if err != nil {
 		return po, err
 	}
-	pods, err := clientset.CoreV1().Pods("resorcerer").List(metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods("resorcerer").List(v1.ListOptions{})
 	if err != nil {
 		return po, err
 	}
