@@ -8,9 +8,12 @@ Already in mid 2015 the Kubernetes community—informed by Google's `autopilot` 
 
 With `resorcerer` we want to contribute to the advancement of VPAs. It's a simple prototypical implementation that should allow users to learn more about their resource consumption footprint. It is an opinionated implementation, making a number of assumptions:
 
-1. Prometheus is available in the cluster
-1. You can run it in privileged mode (as access to all necessary metrics)
-1. As much as possible should happen automatically (that's where the magic/sorcerer comes into play ;)
+1. Prometheus is available in the cluster.
+1. You can run `resorcerer` in privileged mode as it needs access to all necessary metrics.
+1. As much as possible should happen automatically—that's where the magic/sorcerer comes into play ;)
+
+For convenience, I've put together a simple way to deploy `resorcerer` along with Prometheus into OpenShift (see the **Setup** section),
+however, `resorcerer` itself will work on any Kubernetes cluster.
 
 ## Setup
 
@@ -19,7 +22,7 @@ The following assumes OpenShift 1.5 or later.
 ### Launch cAdvisor and Prometheus
 
 Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/)
-we set up our Prometheus environment as follows (or you simply launch `./promup.sh` which includes the following steps):
+we set up our Prometheus environment as follows (or you simply launch `deployments/promup.sh` which includes the following steps):
 
 ```
 $ oc new-project resorcerer
@@ -53,33 +56,37 @@ $ oc policy add-role-to-user cluster-admin system:serviceaccount:resorcerer:defa
 
 If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
 
-### Launch the resorcerer infra cluster daemon
+### Launch the resorcerer infra namespace-level daemon
 
-Launch resorcerer as follows (no HTTP API or API, it's a headless daemon):
+Launch resorcerer as follows:
 
 ```
 $ oc project # make sure that you're in the resorcerer project
 $ oc apply -f deployments/all-resorcerer.yaml
 ```
 
-When done, don't forgot to clean up with `oc delete project resorcerer`.
+You might also want to deploy a couple of apps so that you can try out various pods.
+If you want an on-ramp for that, simply use `deployments/genworkload.sh` to populate the cluster with some pods you can use.
+
+When done, don't forgot to clean up with `oc delete project resorcerer`, which will remove all the resources including the project/namespace itself.
 
 ### Development
 
-We don't do binary releases, you need Go 1.8 and [dep](https://github.com/golang/dep) to build it for your platform. If you don't have `dep` installed yet, do `go get -u github.com/golang/dep/cmd/dep` now and then:
-
-```
-$ dep ensure
-```
+The `resorcerer` daemon is shipped as a container, that is, we don't do binary releases.
+If you want to extend `resorcerer`, you'll need at least Go 1.8 as well as [dep](https://github.com/golang/dep)
+to build it. Note that if you don't have `dep` installed, do `go get -u github.com/golang/dep/cmd/dep` now to install it
+and then `dep ensure` to install the dependencies. The result is an additional `vendor/` directory.
 
 Now you can use the Makefile to build the binaries and container image as you see fit, for example:
 
 ```
-$ go build      # build dev for local testing
-$ make release  # cut a new release (push to Quay)
+$ go build      # build binary for your platform, for local testing
+$ make release  # cut a new release (only maintainers, requires push access to quay.io)
 ```
 
-Note that when run locally for development purposes you want to set something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io`.
+Note that when you execute the `resorcerer` binary locally, for development purposes, you want to set
+something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io` to let it know where
+to find Prometheus.
 
 
 ## Usage
