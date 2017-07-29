@@ -23,8 +23,11 @@ type recresponse struct {
 }
 
 var (
-	promep, targetns string
-	// consumption captures top RAM/CPU consumption, using POD-CONTAINER as key
+	// promep represents the Prometheus endpoint
+	promep string
+	// targetns represents the target namespace
+	targetns string
+	// consumption holds top RAM/CPU consumption, using $POD-$CONTAINER as key
 	consumption map[string]rescon
 )
 

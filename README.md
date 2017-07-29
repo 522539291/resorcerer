@@ -96,10 +96,22 @@ to find Prometheus.
 Against the base service `resorcerer:8080` (and assuming you've set the target namespace via `TARGET_NAMESPACE`):
 
 ```
-GET /observation/$POD?period=10s --> observe $POD for 10s
+GET /observation/$POD?period=10s --> observe $POD for 10s; valid time units: "s", "m", and "h"
 
-GET /recommendation/$POD --> get a resource recommendation for $POD, resulting in:
-                             { "rsays" : [ "c1" : { "mem" : 250, "cpu" : "100m" } ] }
+GET /recommendation/$POD --> get a resource recommendation for $POD, something like:
+
+{
+    "name": "simpleservice",
+    "recs": [
+        {
+            "name": "c1",
+            "resources": {
+                "cpu": "200m",
+                "mem": 43758200
+            }
+        }
+    ]
+}
 
 POST {"mem":250, "cpu":"100m"} /recommendation/$POD/c1 --> for container c1 in $POD set:
                                                            spec.containers['c1'].resources.limits/requests

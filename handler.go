@@ -16,6 +16,11 @@ import (
 func observe(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pod := vars["pod"]
+	periodparam := r.URL.Query().Get("period")
+	period, err := time.ParseDuration(periodparam)
+	if err != nil {
+		period = 5 * time.Second
+	}
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		log.Errorf("Can't connect to Prometheus: %s", err)
@@ -41,7 +46,6 @@ func observe(w http.ResponseWriter, r *http.Request) {
 		k := fmt.Sprintf("%s-%s", pod, container)
 		consumption[k] = rescon{Meminbytes: 100, CPUinmillicores: "200m"}
 	}()
-	period := 5 * time.Second // should come via URL query parameter
 	timeout := time.After(period)
 	pollinterval := 500 * time.Millisecond
 	for {
