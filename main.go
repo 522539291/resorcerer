@@ -16,15 +16,7 @@ import (
 )
 
 func main() {
-	var promep string
-	if promep = os.Getenv("PROM_API"); promep == "" {
-		log.Printf("Can't find a PROM_API environment variable, using default prometheus.resorcerer.svc:9090")
-		promep = "prometheus.resorcerer.svc:9090"
-	}
-	c, err := promapi.NewClient(promapi.Config{Address: promep})
-	if err != nil {
-		log.Fatalf("Can't connect to Prometheus: %s", err)
-	}
+	promep, targetns := loadenvs()
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -33,14 +25,20 @@ func main() {
 		log.Printf("\nDone observing, closing down …")
 		done <- true
 	}()
+
+	c, err := promapi.NewClient(promapi.Config{Address: promep})
+	if err != nil {
+		log.Fatalf("Can't connect to Prometheus: %s", err)
+	}
 	api := promv1.NewAPI(c)
 	log.Printf("Observing resource consumption using %v", api)
+	delay := 2 * time.Second
+	// the main observation loop:
 	go func() {
-		delay := 2 * time.Second
 		for {
-			p, err := listpods()
+			p, err := listpods(targetns)
 			if err != nil {
-				log.Printf("Can't get pod list: %s", err)
+				log.Printf("Can't list pods in %s: %s", targetns, err)
 				time.Sleep(delay)
 				continue
 			}
@@ -59,17 +57,32 @@ func main() {
 	<-done
 }
 
-func listpods() ([]string, error) {
+// loadenvs tries to get the config via environment variables and
+// if that's not possible to set sensible defaults.
+func loadenvs() (promep, targetns string) {
+	if promep = os.Getenv("PROM_API"); promep == "" {
+		log.Printf("Can't find a PROM_API environment variable, using default prometheus.resorcerer.svc:9090")
+		promep = "prometheus.resorcerer.svc:9090"
+	}
+	if targetns = os.Getenv("TARGET_NAMESPACE"); targetns == "" {
+		log.Printf("Can't find a TARGET_NAMESPACE environment variable, using default resorcerer")
+		targetns = "resorcerer"
+	}
+	return promep, targetns
+}
+
+// listpods returns a slice of pod names in the given namespace.
+func listpods(namespace string) ([]string, error) {
 	var po []string
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return po, err
 	}
-	clientset, err := kubernetes.NewForConfig(config)
+	cs, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return po, err
 	}
-	pods, err := clientset.CoreV1().Pods("resorcerer").List(v1.ListOptions{})
+	pods, err := cs.CoreV1().Pods(namespace).List(v1.ListOptions{})
 	if err != nil {
 		return po, err
 	}
