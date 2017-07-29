@@ -48,7 +48,7 @@ From the `oc routes` output above you see where your Prometheus dashboard is, `h
 To make sure that both Prometheus and resorcerer can [access](https://docs.openshift.org/latest/admin_guide/service_accounts.html) all the metrics, do:
 
 ```
-$ oc policy add-role-to-user view system:serviceaccount:default:resorcerer
+$ oc policy add-role-to-user view system:serviceaccount:resorcerer:default
 ```
 
 If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
