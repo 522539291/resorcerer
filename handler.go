@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	promapi "github.com/prometheus/client_golang/api"
-	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 func observe(w http.ResponseWriter, r *http.Request) {
@@ -23,29 +20,11 @@ func observe(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Errorf("Can't connect to Prometheus: %s", err)
+		return
 	}
-	api := promv1.NewAPI(c)
-	log.Infof("Observing resource consumption using %s", api)
-	go func() {
-		// p, err := listpods(targetns)
-		// if err != nil {
-		// 	log.Errorf("Can't list pods in %s: %s", targetns, err)
-		// 	return
-		// }
-		// log.Debugf("%s", p)
-		container := "1"
-		query := "container_memory_usage_bytes"
-		v, err := api.Query(context.Background(), query, time.Now())
-		if err != nil {
-			log.Errorf("Can't get data from Prometheus: %s", err)
-			return
-		}
-		log.Debugf("%s", v)
-		// store top value for mem/cpu here
-		k := fmt.Sprintf("%s-%s", pod, container)
-		consumption[k] = rescon{Meminbytes: 100, CPUinmillicores: "200m"}
-	}()
+	go track(c, targetns, pod)
 	timeout := time.After(period)
 	pollinterval := 500 * time.Millisecond
 	for {
@@ -69,11 +48,6 @@ func getrec(w http.ResponseWriter, r *http.Request) {
 		Pod:             pod,
 		Recommendations: cc,
 	}
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	log.Error(err)
-	// 	return
-	// }
 	_ = json.NewEncoder(w).Encode(recres)
 }
 
