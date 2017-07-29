@@ -89,9 +89,13 @@ Note that when run locally for development purposes you want to set something li
 Against the base service `resorcerer:8080` (and assuming you've set the target namespace via `TARGET_NAMESPACE`):
 
 ```
-GET /recommendation/$POD_NAME --> { "rsays" : [ "somecontainer" : { "mem" : 250, "cpu" : "100m" } ] }
+GET /observation/$POD?period=10s --> observe $POD for 10s
 
-POST { "mem" : 250, "cpu" : "100m" } /recommendation/$POD_NAME/somecontainer --> set $POD_NAME spec.containers['somecontainer'].resources.limits/requests
+GET /recommendation/$POD --> get a resource recommendation for $POD, resulting in:
+                             { "rsays" : [ "c1" : { "mem" : 250, "cpu" : "100m" } ] }
+
+POST {"mem":250, "cpu":"100m"} /recommendation/$POD/c1 --> for container c1 in $POD set:
+                                                           spec.containers['c1'].resources.limits/requests
 
 ```
 

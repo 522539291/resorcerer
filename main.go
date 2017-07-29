@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,12 +18,20 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+type rescon struct {
+	Meminbytes      int    `json:"mem"`
+	CPUinmillicores string `json:"cpu"`
+}
+
 var (
 	promep, targetns string
+	// consumption captures the top RAM/CPU consumption, using POD-CONTAINER as key
+	consumption map[string]rescon
 )
 
 func init() {
 	loadenvs()
+	consumption = make(map[string]rescon)
 }
 
 func main() {
@@ -37,7 +46,6 @@ func main() {
 	host := "0.0.0.0:"
 	port := "8080"
 	r := mux.NewRouter()
-	// the HTTP API:
 	r.HandleFunc("/observation", observe).Methods("GET")
 	r.HandleFunc("/recommendation", getrec).Methods("GET")
 	r.HandleFunc("/recommendation", setrec).Methods("POST")
@@ -50,32 +58,43 @@ func main() {
 func observe(w http.ResponseWriter, r *http.Request) {
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
-		log.Fatalf("Can't connect to Prometheus: %s", err)
+		log.Errorf("Can't connect to Prometheus: %s", err)
 	}
 	api := promv1.NewAPI(c)
-	log.Printf("Observing resource consumption using %v", api)
-	delay := 2 * time.Second
-	// the main observation loop:
+	log.Infof("Observing resource consumption using %v", api)
 	go func() {
-		for {
-			p, err := listpods(targetns)
-			if err != nil {
-				log.Printf("Can't list pods in %s: %s", targetns, err)
-				time.Sleep(delay)
-				continue
-			}
-			log.Printf("%s", p)
-			query := "container_memory_usage_bytes"
-			v, err := api.Query(context.Background(), query, time.Now())
-			if err != nil {
-				log.Printf("Can't get data from Prometheus: %s", err)
-				time.Sleep(delay)
-				continue
-			}
-			log.Printf("%s", v)
-			time.Sleep(delay)
+		// p, err := listpods(targetns)
+		// if err != nil {
+		// 	log.Errorf("Can't list pods in %s: %s", targetns, err)
+		// 	return
+		// }
+		// log.Debugf("%s", p)
+		pod := "simpleservice"
+		container := "1"
+		query := "container_memory_usage_bytes"
+		v, err := api.Query(context.Background(), query, time.Now())
+		if err != nil {
+			log.Errorf("Can't get data from Prometheus: %s", err)
+			return
 		}
+		log.Debugf("%s", v)
+		// store top value for mem/cpu here
+		k := fmt.Sprintf("%s-%s", pod, container)
+		consumption[k] = rescon{Meminbytes: 100, CPUinmillicores: "200m"}
 	}()
+	period := 5 * time.Second // should come via URL query parameter
+	timeout := time.After(period)
+	pollinterval := 500 * time.Millisecond
+	for {
+		select {
+		case <-timeout:
+			log.Info("Observation period over")
+			return
+		default:
+			log.Infof(".")
+		}
+		time.Sleep(pollinterval)
+	}
 }
 
 func getrec(w http.ResponseWriter, r *http.Request) {
