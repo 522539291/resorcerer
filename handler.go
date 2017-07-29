@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -13,30 +13,20 @@ import (
 func observe(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pod := vars["pod"]
-	periodparam := r.URL.Query().Get("period")
-	period, err := time.ParseDuration(periodparam)
-	if err != nil {
-		period = 5 * time.Second
-	}
+	period := r.URL.Query().Get("period")
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Errorf("Can't connect to Prometheus: %s", err)
 		return
 	}
-	go track(c, targetns, pod)
-	timeout := time.After(period)
-	pollinterval := 500 * time.Millisecond
-	for {
-		select {
-		case <-timeout:
-			log.Info("Observation period over")
-			return
-		default:
-			log.Infof(".")
-		}
-		time.Sleep(pollinterval)
+	err = track(c, targetns, pod, period)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Error(err)
+		return
 	}
+	fmt.Fprintf(w, "Successfully observed pod %s", pod)
 }
 
 func getrec(w http.ResponseWriter, r *http.Request) {
