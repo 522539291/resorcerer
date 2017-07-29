@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,9 +24,19 @@ type rescon struct {
 	CPUinmillicores string `json:"cpu"`
 }
 
+type concon struct {
+	Container string `json:"name"`
+	Resources rescon `json:"resources"`
+}
+
+type recresponse struct {
+	Pod             string   `json:"name"`
+	Recommendations []concon `json:"recs"`
+}
+
 var (
 	promep, targetns string
-	// consumption captures the top RAM/CPU consumption, using POD-CONTAINER as key
+	// consumption captures top RAM/CPU consumption, using POD-CONTAINER as key
 	consumption map[string]rescon
 )
 
@@ -46,9 +57,9 @@ func main() {
 	host := "0.0.0.0:"
 	port := "8080"
 	r := mux.NewRouter()
-	r.HandleFunc("/observation", observe).Methods("GET")
-	r.HandleFunc("/recommendation", getrec).Methods("GET")
-	r.HandleFunc("/recommendation", setrec).Methods("POST")
+	r.HandleFunc("/observation/{pod}", observe).Methods("GET")
+	r.HandleFunc("/recommendation/{pod}", getrec).Methods("GET")
+	r.HandleFunc("/recommendation/{pod}/{container}", setrec).Methods("POST")
 	log.Printf("Serving API from: %s%s/v1", host, port)
 	srv := &http.Server{Handler: r, Addr: host + port}
 	log.Fatal(srv.ListenAndServe())
@@ -56,12 +67,14 @@ func main() {
 }
 
 func observe(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pod := vars["pod"]
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		log.Errorf("Can't connect to Prometheus: %s", err)
 	}
 	api := promv1.NewAPI(c)
-	log.Infof("Observing resource consumption using %v", api)
+	log.Infof("Observing resource consumption using %s", api)
 	go func() {
 		// p, err := listpods(targetns)
 		// if err != nil {
@@ -69,7 +82,6 @@ func observe(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 		// log.Debugf("%s", p)
-		pod := "simpleservice"
 		container := "1"
 		query := "container_memory_usage_bytes"
 		v, err := api.Query(context.Background(), query, time.Now())
@@ -98,11 +110,27 @@ func observe(w http.ResponseWriter, r *http.Request) {
 }
 
 func getrec(w http.ResponseWriter, r *http.Request) {
-
+	vars := mux.Vars(r)
+	pod := vars["pod"]
+	log.Infof("Serving recommendation for pod %s", pod)
+	cc := []concon{concon{Container: "c1", Resources: rescon{Meminbytes: 1234, CPUinmillicores: "200m"}}}
+	recres := recresponse{
+		Pod:             pod,
+		Recommendations: cc,
+	}
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	log.Error(err)
+	// 	return
+	// }
+	_ = json.NewEncoder(w).Encode(recres)
 }
 
 func setrec(w http.ResponseWriter, r *http.Request) {
-
+	vars := mux.Vars(r)
+	pod := vars["pod"]
+	container := vars["container"]
+	log.Infof("Updating resources for container %s in pod %s", container, pod)
 }
 
 // loadenvs tries to get the config via environment variables and
