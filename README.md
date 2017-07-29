@@ -45,10 +45,10 @@ dc/prometheus   1          1         1         config,image(prometheus:latest)
 
 From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph` for me (since I'm using Minishift for development).
 
-To make sure that both Prometheus and resorcerer can [access](https://docs.openshift.org/latest/admin_guide/service_accounts.html) all the metrics, do:
+NOTE: To make sure that both Prometheus and resorcerer can [access](https://docs.openshift.org/latest/admin_guide/service_accounts.html) all the metrics, do:
 
 ```
-$ oc policy add-role-to-user view system:serviceaccount:resorcerer:default
+$ oc policy add-role-to-user cluster-admin system:serviceaccount:resorcerer:default
 ```
 
 If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
@@ -81,7 +81,23 @@ $ make release  # cut a new release (push to Quay)
 
 Note that when run locally for development purposes you want to set something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io`.
 
-PromQL examples (see also the [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) exposes):
+
+## Usage
+
+### HTTP API
+
+Against the base service `resorcerer:8080` (and assuming you've set the target namespace via `TARGET_NAMESPACE`):
+
+```
+GET /recommendation/$POD_NAME --> { "rsays" : [ "somecontainer" : { "mem" : 250, "cpu" : "100m" } ] }
+
+POST { "mem" : 250, "cpu" : "100m" } /recommendation/$POD_NAME/somecontainer --> set $POD_NAME spec.containers['somecontainer'].resources.limits/requests
+
+```
+
+### PromQL examples
+
+See also the [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) exposes:
 
 ```
 # average Resident Set Size (RSS), excl. swapped out memory:

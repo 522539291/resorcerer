@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	promapi "github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/client-go/kubernetes"
@@ -15,8 +17,15 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var (
+	promep, targetns string
+)
+
+func init() {
+	loadenvs()
+}
+
 func main() {
-	promep, targetns := loadenvs()
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -25,7 +34,20 @@ func main() {
 		log.Printf("\nDone observing, closing down …")
 		done <- true
 	}()
+	host := "0.0.0.0:"
+	port := "8080"
+	r := mux.NewRouter()
+	// the HTTP API:
+	r.HandleFunc("/observation", observe).Methods("GET")
+	r.HandleFunc("/recommendation", getrec).Methods("GET")
+	r.HandleFunc("/recommendation", setrec).Methods("POST")
+	log.Printf("Serving API from: %s%s/v1", host, port)
+	srv := &http.Server{Handler: r, Addr: host + port}
+	log.Fatal(srv.ListenAndServe())
+	<-done
+}
 
+func observe(w http.ResponseWriter, r *http.Request) {
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		log.Fatalf("Can't connect to Prometheus: %s", err)
@@ -54,12 +76,22 @@ func main() {
 			time.Sleep(delay)
 		}
 	}()
-	<-done
+}
+
+func getrec(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func setrec(w http.ResponseWriter, r *http.Request) {
+
 }
 
 // loadenvs tries to get the config via environment variables and
 // if that's not possible to set sensible defaults.
-func loadenvs() (promep, targetns string) {
+func loadenvs() {
+	if envd := os.Getenv("DEBUG"); envd != "" {
+		log.SetLevel(log.DebugLevel)
+	}
 	if promep = os.Getenv("PROM_API"); promep == "" {
 		log.Printf("Can't find a PROM_API environment variable, using default prometheus.resorcerer.svc:9090")
 		promep = "prometheus.resorcerer.svc:9090"
@@ -68,7 +100,6 @@ func loadenvs() (promep, targetns string) {
 		log.Printf("Can't find a TARGET_NAMESPACE environment variable, using default resorcerer")
 		targetns = "resorcerer"
 	}
-	return promep, targetns
 }
 
 // listpods returns a slice of pod names in the given namespace.
