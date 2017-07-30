@@ -82,6 +82,14 @@ Launch `resorcerer` as follows (note: in vanilla Kubernetes, replace the `oc app
 $ oc apply -f deployments/all-resorcerer.yaml
 ```
 
+If you're using OpenShift as the target deployment platform you can also do the following to make the `resorcerer` HTTP API
+accessible from outside of the cluster:
+
+```
+$ oc expose deployment resorcerer --port=8080
+$ oc expose service resorcerer
+```
+
 You might also want to deploy a couple of apps so that you can try out various pods.
 If you want an on-ramp for that, simply use `deployments/genworkload.sh` to populate the cluster with some pods you can use.
 
