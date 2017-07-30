@@ -165,3 +165,9 @@ quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
 # the 5 largest RSS entries:
 topk(5,container_memory_rss)
 ```
+
+## Architecture
+
+![resorcerer archictecture](img/resorcerer-arch.jpg)
+
+TBD
