@@ -5,6 +5,14 @@ Are you still manually managing the memory and CPU constraints per container?
 Or, maybe you're not even yet there; maybe this whole resource consumption and constraints thing is
 totally new to you. Read on._
 
+- [What's this about and why should I care?](#whats-this-about-and-why-should-i-care)
+- [Goals and non-goals of resorcerer](#goals-and-non-goals-of-resorcerer)
+- [Setup](#setup)
+	- [Launch cAdvisor and Prometheus](#launch-cadvisor-and-prometheus)
+	- [Launch resorcerer](#launch-resorcerer)
+	- [Development](#development)
+- [Usage](#usage)
+
 ## What's this about and why should I care?
 
 Let's see what Kubernetes practitioners have to say on this topic:
@@ -77,12 +85,13 @@ $ oc policy add-role-to-user admin system:serviceaccount:resorcerer:default
 If you're not familiar with the Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
 Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`.
 
-### Launch the resorcerer infra namespace-level daemon
+### Launch resorcerer
 
-Launch resorcerer as follows:
+In a nutshell, `resorcerer` is an namespace-level infrastructure daemon that you can ask to observe pods and get recommendations for the resource consumption.
+
+Launch `resorcerer` as follows (note: in vanilla Kubernetes, replace the `oc apply` with `kubectl apply`):
 
 ```
-$ oc project # make sure that you're in the resorcerer project
 $ oc apply -f deployments/all-resorcerer.yaml
 ```
 
