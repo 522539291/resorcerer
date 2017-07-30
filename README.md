@@ -51,10 +51,11 @@ From the `oc routes` output above you see where your Prometheus dashboard is, `h
 NOTE: To make sure that both Prometheus and resorcerer can [access](https://docs.openshift.org/latest/admin_guide/service_accounts.html) all the metrics, do:
 
 ```
-$ oc policy add-role-to-user cluster-admin system:serviceaccount:resorcerer:default
+$ oc policy add-role-to-user admin system:serviceaccount:resorcerer:default
 ```
 
-If you're not familiar with the  Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
+If you're not familiar with the Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
+Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`. 
 
 ### Launch the resorcerer infra namespace-level daemon
 
