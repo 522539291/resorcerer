@@ -12,6 +12,7 @@ totally new to you. Read on._
 	- [Launch resorcerer](#launch-resorcerer)
 	- [Development](#development)
 - [Usage](#usage)
+- [Architecture](#architecture)
 
 ## What's this about and why should I care?
 
@@ -83,7 +84,8 @@ $ oc policy add-role-to-user admin system:serviceaccount:resorcerer:default
 ```
 
 If you're not familiar with the Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
-Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`.
+Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`;
+see also this example of a [targets JSON](dev/example-targets.json) result file.
 
 ### Launch resorcerer
 
@@ -148,26 +150,48 @@ POST {"mem":250, "cpu":"100m"} /recommendation/$POD/c1 --> for container c1 in $
 
 ```
 
-### PromQL examples
-
-See also the [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) exposes:
-
-```
-# average Resident Set Size (RSS), excl. swapped out memory:
-avg(container_memory_rss)
-
-# the maximum value of current memory usage in bytes over the last 100 minutes:
-max_over_time(container_memory_usage_bytes{}[100m])
-
-# the 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over the last 60 seconds:
-quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
-
-# the 5 largest RSS entries:
-topk(5,container_memory_rss)
-```
-
 ## Architecture
 
 ![resorcerer archictecture](img/resorcerer-arch.jpg)
 
 TBD
+
+### PromQL examples
+
+CPU system time for all containers in the current namespace:
+
+```
+container_cpu_system_seconds_total{__meta_kubernetes_pod_container_name=".+"}
+```
+
+Average Resident Set Size (RSS), excl. swapped out memory:
+
+```
+avg(container_memory_rss)
+```
+
+Maximum value of current memory usage in bytes over the last 100 minutes:
+
+```
+max_over_time(container_memory_usage_bytes{}[100m])
+```
+
+The 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over the last 60 seconds:
+
+```
+quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
+```
+
+The 5 largest RSS entries:
+
+```
+topk(5,container_memory_rss)
+```
+
+## Resources
+
+- [Hands on: Monitoring Kubernetes with Prometheus](https://coreos.com/blog/monitoring-kubernetes-with-prometheus.html)
+- [Monitoring Kubernetes with Prometheus (Kubernetes Ireland, 2016)](https://www.slideshare.net/brianbrazil/monitoring-kubernetes-with-prometheus-kubernetes-ireland-2016)
+- [Kubernetes service discovery](https://prometheus.io/docs/operating/configuration/#<kubernetes_sd_config>) configuration parameters (Prometheus docs)
+- [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) source_labels
+- [waynedovey/openshift-prometheus](https://github.com/waynedovey/openshift-prometheus)

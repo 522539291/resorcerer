@@ -2,7 +2,8 @@ global:
   scrape_interval:       5s
   evaluation_interval:   5s
 
-# Based on https://github.com/waynedovey/openshift-prometheus
+# Based on https://github.com/waynedovey/openshift-prometheus as well as
+# https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml
 # and had to set `scheme: http` to make it work.
 
 scrape_configs:
@@ -19,41 +20,6 @@ scrape_configs:
   - action:              labelmap
     regex:               __meta_kubernetes_node_label_(.+)
 
-- job_name:              'kubernetes-service-endpoints'
-  scheme:                http
-  kubernetes_sd_configs:
-  - role:                endpoints
-    namespaces:
-      names:
-      - resorcerer
-
-  relabel_configs:
-  - source_labels:       [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-    action:              keep
-    regex:               true
-  - source_labels:       [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-    action:              replace
-    target_label:        __scheme__
-    regex:               (https?)
-  - source_labels:       [__meta_kubernetes_service_annotation_prometheus_io_path]
-    action:              replace
-    regex:               (.+)
-    target_label:        __metrics_path__
-  - source_labels:       [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-    action:              replace
-    target_label:        __address__
-    regex:               (.+)(?::\d+);(\d+)
-    replacement:         $1:$2
-  - action:              labelmap
-    regex:               __meta_kubernetes_service_label_(.+)
-  - source_labels:       [__meta_kubernetes_service_namespace]
-    action:              replace
-    target_label:        kubernetes_namespace
-  - source_labels:       [__meta_kubernetes_service_name]
-    action:              replace
-    target_label:        kubernetes_name
-
-
 - job_name:              'kubernetes-pods'
   scheme:                http
   kubernetes_sd_configs:
@@ -61,23 +27,3 @@ scrape_configs:
     namespaces:
       names:
       - resorcerer
-
-  relabel_configs:
-  - source_labels:       [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-    action:              keep
-    regex:               true
-  - source_labels:       [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-    action:              replace
-    target_label:        __scheme__
-    regex:               (https?)
-  - source_labels:       [__meta_kubernetes_pod_annotation_prometheus_io_path]
-    action:              replace
-    target_label:        __metrics_path__
-    regex:               (.+)
-  - source_labels:       [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-    action:              replace
-    regex:               (.+):(?:\d+);(\d+)
-    replacement:         ${1}:${2}
-    target_label:        __address__
-  - action:              labelmap
-    regex:               __meta_kubernetes_pod_label_(.+)
