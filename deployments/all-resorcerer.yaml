@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name:     resorcerer
-        image:    quay.io/mhausenblas/resorcerer:0.3.0
+        image:    quay.io/mhausenblas/resorcerer:0.4.0
         env:
         - name:   PROM_API
           value:  "http://prometheus:9090"
