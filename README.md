@@ -75,7 +75,10 @@ dc/cadvisor     1          1         1         config,image(cadvisor:latest)
 dc/prometheus   1          1         1         config,image(prometheus:latest)
 ```
 
-From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph` for me (since I'm using Minishift for development).
+From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph`
+for me (since I'm using Minishift for development):
+
+![Prometheus dashboard](img/prom-screen-shot.png)
 
 If you're not familiar with the Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
 Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`;
@@ -114,7 +117,6 @@ Note that when you execute the `resorcerer` binary locally, for development purp
 something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io` to let it know where
 to find Prometheus.
 
-
 ## Usage
 
 ### HTTP API
@@ -146,7 +148,7 @@ POST {"mem":250, "cpu":"100m"} /recommendation/$POD/c1 --> for container c1 in $
 
 ## Architecture
 
-![resorcerer archictecture](img/resorcerer-arch.jpg)
+![resorcerer architecture](img/resorcerer-arch.jpg)
 
 TBD
 
@@ -164,10 +166,10 @@ Average Resident Set Size (RSS), excl. swapped out memory:
 avg(container_memory_rss)
 ```
 
-Maximum value of current memory usage in bytes over the last 100 minutes:
+Maximum value memory usage in bytes over the last 5 minutes for container `sise` in pod `twocontainers`:
 
 ```
-max_over_time(container_memory_usage_bytes{}[100m])
+max_over_time(container_memory_usage_bytes{pod_name="twocontainers", container_name="sise"}[5m])
 ```
 
 The 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over the last 60 seconds:

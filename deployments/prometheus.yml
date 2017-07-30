@@ -2,8 +2,7 @@ global:
   scrape_interval:        5s
   evaluation_interval:    5s
 
-# Based on https://github.com/waynedovey/openshift-prometheus as well as
-# https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml
+# Based on https://github.com/openshift/origin/blob/master/examples/prometheus/prometheus.yaml
 
 scrape_configs:
 
