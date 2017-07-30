@@ -1,9 +1,9 @@
 # resorcerer—resource sorcerer
 
-__Do you know how much memory your app consumes? How about CPU time? What about spikes in the traffic?
+_Do you know how much memory your app consumes? How about CPU time? What about spikes in the traffic?
 Are you still manually managing the memory and CPU constraints per container?
 Or, maybe you're not even yet there; maybe this whole resource consumption and constraints thing is
-totally new to you. Read on.__
+totally new to you. Read on._
 
 ## What's this about and why should I care?
 
