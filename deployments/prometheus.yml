@@ -1,24 +1,21 @@
 global:
-  scrape_interval:       5s
-  evaluation_interval:   5s
+  scrape_interval:        5s
+  evaluation_interval:    5s
 
 # Based on https://github.com/waynedovey/openshift-prometheus as well as
 # https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml
 
 scrape_configs:
-- job_name:              'kubernetes'
+
+- job_name:               'kubernetes-nodes'
+  scheme:                 https
+  tls_config:
+    ca_file:              /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  bearer_token_file:      /var/run/secrets/kubernetes.io/serviceaccount/token
+
   kubernetes_sd_configs:
-  - role:                pod
-    namespaces:
-      names:
-      - resorcerer
+  - role:                 node
 
   relabel_configs:
-  - action:              labelmap
-    regex:               __meta_kubernetes_pod_label_(.+)
-  - source_labels:       [__meta_kubernetes_namespace]
-    action:              replace
-    target_label:        kubernetes_namespace
-  - source_labels:       [__meta_kubernetes_pod_name]
-    action:              replace
-    target_label:        kubernetes_pod_name
+  - action:               labelmap
+    regex:                __meta_kubernetes_node_label_(.+)

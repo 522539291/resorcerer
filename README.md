@@ -158,10 +158,10 @@ TBD
 
 ### PromQL examples
 
-CPU system time for all containers in the current namespace:
+Aggregate CPU usage for all containers in pod `simple*` over the last 3 minutes:
 
 ```
-container_cpu_usage_seconds_total{kubernetes_pod_name=".+"}
+sum(rate(container_cpu_usage_seconds_total{pod_name=~"simple.+", container_name="POD"}[3m])) without (cpu)
 ```
 
 Average Resident Set Size (RSS), excl. swapped out memory:
