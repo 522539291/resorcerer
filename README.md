@@ -161,7 +161,7 @@ TBD
 CPU system time for all containers in the current namespace:
 
 ```
-container_cpu_system_seconds_total{__meta_kubernetes_pod_container_name=".+"}
+container_cpu_usage_seconds_total{kubernetes_pod_name=".+"}
 ```
 
 Average Resident Set Size (RSS), excl. swapped out memory:
@@ -194,4 +194,5 @@ topk(5,container_memory_rss)
 - [Monitoring Kubernetes with Prometheus (Kubernetes Ireland, 2016)](https://www.slideshare.net/brianbrazil/monitoring-kubernetes-with-prometheus-kubernetes-ireland-2016)
 - [Kubernetes service discovery](https://prometheus.io/docs/operating/configuration/#<kubernetes_sd_config>) configuration parameters (Prometheus docs)
 - [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) source_labels
+- [Prometheus Ops Metrics Example](https://github.com/openshift/origin/tree/master/examples/prometheus) from `openshift/origin`
 - [waynedovey/openshift-prometheus](https://github.com/waynedovey/openshift-prometheus)
