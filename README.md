@@ -55,24 +55,12 @@ we set up our Prometheus environment as follows (or you simply launch `deploymen
 
 ```
 $ oc new-project resorcerer
-$ oc apply -f deployments/all-cadvisor.yaml
 $ oc create configmap prom-config-cm --from-file=deployments/prometheus.yaml
 $ oc apply -f deployments/all-prometheus.yaml
-$ oc expose service cadvisor
 $ oc expose service prometheus
-
-$ oc get routes,svc,dc
+$ oc get routes
 NAME                HOST/PORT                                     PATH      SERVICES     PORT       TERMINATION   WILDCARD
-routes/cadvisor     cadvisor-resorcerer.192.168.99.100.nip.io               cadvisor     8080-tcp                 None
 routes/prometheus   prometheus-resorcerer.192.168.99.100.nip.io             prometheus   9090-tcp                 None
-
-NAME             CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
-svc/cadvisor     172.30.88.229    <none>        8080/TCP   1m
-svc/prometheus   172.30.114.121   <none>        9090/TCP   42s
-
-NAME            REVISION   DESIRED   CURRENT   TRIGGERED BY
-dc/cadvisor     1          1         1         config,image(cadvisor:latest)
-dc/prometheus   1          1         1         config,image(prometheus:latest)
 ```
 
 From the `oc routes` output above you see where your Prometheus dashboard is, `http://prometheus-resorcerer.192.168.99.100.nip.io/graph`
@@ -121,30 +109,48 @@ to find Prometheus.
 
 ### HTTP API
 
-Against the base service `resorcerer:8080` (and assuming you've set the target namespace via `TARGET_NAMESPACE`):
+Against the base service `resorcerer:8080` and assuming you've set the target namespace via `TARGET_NAMESPACE`
+you can perform the following operations:
+
+### Observation
+
+Observe $CONTAINER in $POD for period $PERION with valid time units "s", "m", and "h":
 
 ```
-GET /observation/$POD?period=10s --> observe $POD for 10s; valid time units: "s", "m", and "h"
+GET /observation/$POD/$CONTAINER?period=$PERIOD
+```
 
-GET /recommendation/$POD --> get a resource recommendation for $POD, something like:
+For example: `http localhost:8080/observation/twocontainers/sise?period=5m`
 
+### Recommendations
+
+Get a resource recommendation for $CONTAINER in $POD:
+
+```
+GET /recommendation/$POD/$CONTAINER
+```
+
+For example:
+
+```
+$ http localhost:8080/recommendation/twocontainers/sise
 {
-    "name": "simpleservice",
-    "recs": [
-        {
-            "name": "c1",
-            "resources": {
-                "cpu": "200m",
-                "mem": 43758200
-            }
-        }
-    ]
+    "container": "sise",
+    "pod": "twocontainers",
+    "resources": {
+        "cpu": "0.000016975922339584197",
+        "mem": "19906560"
+    }
 }
+```
 
-POST {"mem":250, "cpu":"100m"} /recommendation/$POD/c1 --> for container c1 in $POD set:
-                                                           spec.containers['c1'].resources.limits/requests
+To set `spec.containers[].resources.limits/requests` for $CONTAINER in $POD:
 
 ```
+$ http POST /recommendation/$POD/$CONTAINER cpu=10m mem=10416128
+```
+
+TBD
 
 ## Architecture
 
@@ -154,16 +160,16 @@ TBD
 
 ### PromQL examples
 
-Aggregate CPU usage for all containers in pod `simple*` over the last 3 minutes:
+Aggregate CPU usage for all containers in pod `twocontainers` over the last 5 minutes:
+
+```
+sum(rate(container_cpu_usage_seconds_total{pod_name="twocontainers"}[5m]))
+```
+
+Aggregate CPU usage for pods that names start with `simple` over the last 3 minutes:
 
 ```
 sum(rate(container_cpu_usage_seconds_total{pod_name=~"simple.+", container_name="POD"}[3m])) without (cpu)
-```
-
-Average Resident Set Size (RSS), excl. swapped out memory:
-
-```
-avg(container_memory_rss)
 ```
 
 Maximum value memory usage in bytes over the last 5 minutes for container `sise` in pod `twocontainers`:
@@ -176,6 +182,12 @@ The 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over 
 
 ```
 quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
+```
+
+Average Resident Set Size (RSS), excl. swapped out memory:
+
+```
+avg(container_memory_rss)
 ```
 
 The 5 largest RSS entries:
