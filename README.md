@@ -211,4 +211,5 @@ topk(5,container_memory_rss)
 - [Kubernetes service discovery](https://prometheus.io/docs/operating/configuration/#<kubernetes_sd_config>) configuration parameters (Prometheus docs)
 - [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) source_labels
 - [Prometheus Ops Metrics Example](https://github.com/openshift/origin/tree/master/examples/prometheus) from `openshift/origin`
+- [wkulhanek/openshift-prometheus](https://github.com/wkulhanek/openshift-prometheus)
 - [waynedovey/openshift-prometheus](https://github.com/waynedovey/openshift-prometheus)

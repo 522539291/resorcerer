@@ -40,7 +40,7 @@ func getrec(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		e := fmt.Errorf("Can't retrieve recommendation for container '%s' in pod '%s': no such entry exists!", container, pod)
 		http.Error(w, fmt.Sprintf("%s", e), http.StatusBadRequest)
-		log.Infof("%s", e)
+		log.Errorf("%s", e)
 		return
 	}
 	recres := recresponse{
@@ -56,4 +56,16 @@ func setrec(w http.ResponseWriter, r *http.Request) {
 	pod := vars["pod"]
 	container := vars["container"]
 	log.Infof("Updating resources for container %s in pod %s", container, pod)
+
+	res, err := adjust("resorcerer", pod, container)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Errorf("%s", err)
+		return
+	}
+	fmt.Fprintf(w, "%s", res)
+}
+
+func version(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "the one and only resorcerer in version %s", releaseVersion)
 }

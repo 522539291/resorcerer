@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -25,23 +27,30 @@ func loadenvs() {
 	}
 }
 
-// listpods returns a slice of pod names in the given namespace.
-func listpods(namespace string) ([]string, error) {
-	var po []string
+func adjust(namespace, pod, container string) (string, error) {
+	// 1. check if standalone pod or supervised (RC, Deployment/RS)
+	// 2. replace pod with new resource limits, see also:
+	// https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-limits-are-run
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return po, err
+		return "", err
 	}
 	cs, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return po, err
+		return "", err
 	}
 	pods, err := cs.CoreV1().Pods(namespace).List(v1.ListOptions{})
 	if err != nil {
-		return po, err
+		return "", err
 	}
+	result := ""
 	for _, p := range pods.Items {
-		po = append(po, p.GetName())
+		log.Printf("%v", p.GetOwnerReferences())
+		if strings.HasPrefix(p.GetName(), pod) {
+			result = fmt.Sprintf("%v", p.GetOwnerReferences())
+			break
+		}
 	}
-	return po, nil
+	return result, nil
 }

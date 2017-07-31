@@ -19,6 +19,7 @@ type recresponse struct {
 }
 
 var (
+	releaseVersion string
 	// promep represents the Prometheus endpoint
 	promep string
 	// targetns represents the target namespace
@@ -39,6 +40,7 @@ func main() {
 	r.HandleFunc("/observation/{pod}/{container}", observe).Methods("GET")
 	r.HandleFunc("/recommendation/{pod}/{container}", getrec).Methods("GET")
 	r.HandleFunc("/recommendation/{pod}/{container}", setrec).Methods("POST")
+	r.HandleFunc("/version", version).Methods("GET")
 	log.Printf("Serving API from: %s%s/v1", host, port)
 	srv := &http.Server{Handler: r, Addr: host + port}
 	log.Fatal(srv.ListenAndServe())
