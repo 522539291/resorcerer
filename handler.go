@@ -15,6 +15,7 @@ func observe(w http.ResponseWriter, r *http.Request) {
 	pod := vars["pod"]
 	container := vars["container"]
 	period := r.URL.Query().Get("period")
+	log.Infof("Tyring to observe container '%s' in pod '%s'", container, pod)
 	c, err := promapi.NewClient(promapi.Config{Address: promep})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -27,14 +28,14 @@ func observe(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 		return
 	}
-	fmt.Fprintf(w, "Successfully observed pod %s", pod)
+	fmt.Fprintf(w, "Successfully observed container '%s' in pod '%s'", container, pod)
 }
 
 func getrec(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pod := vars["pod"]
 	container := vars["container"]
-	log.Infof("Serving recommendation for container '%s' in pod '%s'", container, pod)
+	log.Infof("Tyring to serve recommendation for container '%s' in pod '%s'", container, pod)
 	k := fmt.Sprintf("%s:%s", pod, container)
 	rec, ok := consumption[k]
 	if !ok {

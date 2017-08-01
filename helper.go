@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/resource"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
@@ -103,25 +103,25 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 		}
 		_ = depl
 
+		// set new resource limits
 		cpuval, _ := strconv.ParseInt(lim.CPUusagesec, 10, 64)
-		newcpu := resource.NewQuantity(cpuval, resource.DecimalSI)
 		memval, _ := strconv.ParseInt(lim.Meminbytes, 10, 64)
-		newmem := resource.NewQuantity(memval, resource.DecimalSI)
-		// newlim := v1.ResourceList{
-		// 		v1.ResourceCPU: newcpu,
-		// 		v1.ResourceMemory: newmem,
-		// }
-		// // set new resource limits
-		// depl.Spec.Template = v1.PodSpec{
-		// 	Containers: []v1.Container{
-		// 		{
-		// 			Resources v1.ResourceRequirements{
-		// 			Limits : newlim,
-		// 			Requests : newlim,
-		// 			}
-		// 		},
-		// 	},
-		// }
+		newlim := v1.ResourceList{
+			v1.ResourceCPU:    *resource.NewQuantity(cpuval, resource.DecimalSI),
+			v1.ResourceMemory: *resource.NewQuantity(memval, resource.DecimalSI),
+		}
+		depl.Spec.Template = v1.PodTemplateSpec{
+			Spec: v1.PodSpec{
+				Containers: []v1.Container{
+					{
+						Resources: v1.ResourceRequirements{
+							Limits:   newlim,
+							Requests: newlim,
+						},
+					},
+				},
+			},
+		}
 		supervisor = "Deployment-ReplicaSet"
 	}
 	return fmt.Sprintf("Seems like '%s' is a pod supervised by an '%s', updated it", pod, supervisor), nil
