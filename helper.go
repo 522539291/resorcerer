@@ -27,7 +27,31 @@ func loadenvs() {
 	}
 }
 
-func adjust(namespace, pod, container string) (string, error) {
+// listpods returns a slice of pod names in the given namespace.
+func listpods(namespace string) ([]string, error) {
+	var po []string
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return po, err
+	}
+	cs, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return po, err
+	}
+	pods, err := cs.CoreV1().Pods(namespace).List(v1.ListOptions{})
+	if err != nil {
+		return po, err
+	}
+	for _, p := range pods.Items {
+		po = append(po, p.GetName())
+	}
+	return po, nil
+}
+
+// adjust updates the resource limits of container in pod,
+// setting spec.containers[].resources.limits/request to the
+// limits as specified in lim.
+func adjust(namespace, pod, container string, lim rescon) (string, error) {
 	// 1. check if standalone pod or supervised (RC, Deployment/RS)
 	// 2. replace pod with new resource limits, see also:
 	// https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-limits-are-run

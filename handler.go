@@ -48,22 +48,48 @@ func getrec(w http.ResponseWriter, r *http.Request) {
 		Container: container,
 		Resources: rec,
 	}
+	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(recres)
 }
 
-func setrec(w http.ResponseWriter, r *http.Request) {
+func adjustment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pod := vars["pod"]
 	container := vars["container"]
-	log.Infof("Updating resources for container %s in pod %s", container, pod)
 
-	res, err := adjust("resorcerer", pod, container)
+	decoder := json.NewDecoder(r.Body)
+	var adjustrescon rescon
+	err := decoder.Decode(&adjustrescon)
+	if err != nil {
+		mreq := "The resource constraints request is malformed"
+		http.Error(w, mreq, http.StatusBadRequest)
+		log.Error(mreq)
+		return
+	}
+	log.Infof("Updating resources for container %s in pod %s", container, pod)
+	res, err := adjust("resorcerer", pod, container, adjustrescon)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		log.Errorf("%s", err)
 		return
 	}
 	fmt.Fprintf(w, "%s", res)
+}
+
+func targets(w http.ResponseWriter, r *http.Request) {
+	pods, err := listpods("resorcerer")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusInternalServerError)
+		log.Errorf("%s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(struct {
+		Pod []string `json:"pod"`
+		// Containers []string `json:"containers"`
+	}{
+		pods,
+	})
 }
 
 func version(w http.ResponseWriter, r *http.Request) {

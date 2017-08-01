@@ -39,7 +39,8 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/observation/{pod}/{container}", observe).Methods("GET")
 	r.HandleFunc("/recommendation/{pod}/{container}", getrec).Methods("GET")
-	r.HandleFunc("/recommendation/{pod}/{container}", setrec).Methods("POST")
+	r.HandleFunc("/adjustment/{pod}/{container}", adjustment).Methods("POST")
+	r.HandleFunc("/targets", targets).Methods("GET")
 	r.HandleFunc("/version", version).Methods("GET")
 	log.Printf("Serving API from: %s%s/v1", host, port)
 	srv := &http.Server{Handler: r, Addr: host + port}

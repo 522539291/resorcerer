@@ -155,7 +155,7 @@ $ http localhost:8080/recommendation/twocontainers/sise
 To set `spec.containers[].resources.limits/requests` for $CONTAINER in $POD:
 
 ```
-$ http POST /recommendation/$POD/$CONTAINER cpu=10m mem=10416128
+$ http POST /adjustment/$POD/$CONTAINER cpu=10m mem=10416128
 ```
 
 TBD
