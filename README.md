@@ -120,7 +120,7 @@ to find Prometheus.
 Against the base service `resorcerer:8080` and assuming you've set the target namespace via `TARGET_NAMESPACE`
 you can perform the following operations:
 
-### Observation
+#### Observation
 
 To observe $CONTAINER in $POD for period $PERION (with valid time units "s", "m", and "h") do:
 
@@ -130,7 +130,7 @@ GET /observation/$POD/$CONTAINER?period=$PERIOD
 
 For example: `http localhost:8080/observation/twocontainers/sise?period=5m`
 
-### Recommendations
+#### Recommendations
 
 To get a resource consumption recommendation for $CONTAINER in $POD do:
 
@@ -152,7 +152,7 @@ $ http localhost:8080/recommendation/twocontainers/sise
 }
 ```
 
-### Adjustments
+#### Adjustments
 
 To adjust the resource consumption for $CONTAINER in $POD do:
 
