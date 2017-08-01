@@ -122,7 +122,7 @@ you can perform the following operations:
 
 ### Observation
 
-Observe $CONTAINER in $POD for period $PERION with valid time units "s", "m", and "h":
+To observe $CONTAINER in $POD for period $PERION (with valid time units "s", "m", and "h") do:
 
 ```
 GET /observation/$POD/$CONTAINER?period=$PERIOD
@@ -132,7 +132,7 @@ For example: `http localhost:8080/observation/twocontainers/sise?period=5m`
 
 ### Recommendations
 
-Get a resource recommendation for $CONTAINER in $POD:
+To get a resource consumption recommendation for $CONTAINER in $POD do:
 
 ```
 GET /recommendation/$POD/$CONTAINER
@@ -152,13 +152,16 @@ $ http localhost:8080/recommendation/twocontainers/sise
 }
 ```
 
-To set `spec.containers[].resources.limits/requests` for $CONTAINER in $POD:
+### Adjustments
+
+To adjust the resource consumption for $CONTAINER in $POD do:
 
 ```
 $ http POST /adjustment/$POD/$CONTAINER cpu=10m mem=10416128
 ```
 
-TBD
+Note that above means effectively manipulating  `spec.containers[].resources.limits/requests` and causing a new pod being launched.
+There are ATM no in-place adjustments possible since the primitives are not in place yet, cf. [ISSUE-5774](https://github.com/kubernetes/kubernetes/issues/5774).
 
 ## Architecture
 
