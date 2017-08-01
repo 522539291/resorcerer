@@ -76,7 +76,7 @@ see also this example of a [targets JSON](dev/example-targets.json) result file.
 
 In a nutshell, `resorcerer` is a namespace-level infrastructure daemon that you can ask to observe pods and get recommendations for the resource consumption.
 
-Launch `resorcerer` as follows (note: in vanilla Kubernetes, replace the `oc apply` with `kubectl apply`):
+Launch `resorcerer` as follows (note: in vanilla Kubernetes, replace the `oc apply` with `kubectl apply`, if on OpenShift then simple run `deployments/resorcererup.sh`):
 
 ```
 $ oc apply -f deployments/all-resorcerer.yaml
