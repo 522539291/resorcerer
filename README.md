@@ -115,14 +115,17 @@ to find Prometheus.
 
 ## Usage
 
+Explains how to use the `resorcerer` HTTP API.
+
 ### HTTP API
 
-Against the base service `resorcerer:8080` and assuming you've set the target namespace via `TARGET_NAMESPACE`
-you can perform the following operations:
+Either locally against `PROM_API` or in-cluster against base service FQDN `resorcerer:8080`
+(and assuming that if you haven't set the target namespace via `TARGET_NAMESPACE` then you're fine with operating on the `resorcerer` namespace)
+you can perform the operations as described in the following.
 
 #### Observation
 
-To observe $CONTAINER in $POD for period $PERION (with valid time units "s", "m", and "h") do:
+To observe $CONTAINER in $POD for period $PERIOD (with valid time units "s", "m", and "h") do:
 
 ```
 GET /observation/$POD/$CONTAINER?period=$PERIOD
