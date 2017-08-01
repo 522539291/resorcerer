@@ -163,7 +163,7 @@ To adjust the resource consumption for $CONTAINER in $POD do:
 $ http POST /adjustment/$POD/$CONTAINER cpu=10m mem=10416128
 ```
 
-Note that above means effectively manipulating  `spec.containers[].resources.limits/requests` and causing a new pod being launched.
+Note that above means effectively manipulating `spec.containers[].resources.limits/requests` and causing a new pod being launched.
 There are ATM no in-place adjustments possible since the primitives are not in place yet, cf. [ISSUE-5774](https://github.com/kubernetes/kubernetes/issues/5774).
 
 ## Architecture
@@ -219,3 +219,10 @@ topk(5,container_memory_rss)
 - [Prometheus Ops Metrics Example](https://github.com/openshift/origin/tree/master/examples/prometheus) from `openshift/origin`
 - [wkulhanek/openshift-prometheus](https://github.com/wkulhanek/openshift-prometheus)
 - [waynedovey/openshift-prometheus](https://github.com/waynedovey/openshift-prometheus)
+
+## Kudos
+
+We'd like to thank the following people for their support:
+
+- Julius Volz (Prometheus)
+- Stefan Schimanski (Kube API)
