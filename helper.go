@@ -84,45 +84,67 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 		anno := po.GetAnnotations()
 		owner, ok := anno["kubernetes.io/created-by"]
 		if !ok { // standalone pod (example: twocontainers)
-			// TBD: replace the standalone pod
-			return fmt.Sprintf("Seems like '%s' is a standalone pod, replaced it", pod), nil
+			// set new resource limits
+			t := podwithlimits(lim)
+			po.Spec = t.Spec
+			_, err = cs.CoreV1().Pods(namespace).Update(po)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("Seems like '%s' is a standalone pod, replaced it with new resource limits", pod), nil
 		}
 		// corev1-supervised pod, that is, an RC, now owner should contain something like:
 		// {"kind":"SerializedReference","apiVersion":"v1","reference":{"kind":"ReplicationController", ...}
 		switch {
-		case strings.Contains(owner, "ReplicationController"): // this means a DC, OpenShift-specific
+		case strings.Contains(owner, "ReplicationController"): // this means a DC, OpenShift-specific (example: simpleservice)
+			rc, err := cs.ReplicationControllers(namespace).Get(pod)
+			if err != nil {
+				return "", err
+			}
+			// set new resource limits
+			p := podwithlimits(lim)
+			rc.Spec.Template = &p
+			_, err = cs.CoreV1().ReplicationControllers(namespace).Update(rc)
+			if err != nil {
+				return "", err
+			}
 			supervisor = "DeploymentConfig-ReplicationController"
-			// TBD (example: simpleservice)
 		default:
 			return fmt.Sprintf("Yeah man, so I don't really know that kind of supervisor, sorry …"), nil
 		}
-	case false: // an extensionsV1Beta supervised pod, that is, Deployment+RS (example: resorcerer itself)
+	case false: // an extensionsV1Beta supervised pod, that is, Deployment+RS (example: nginx)
 		depl, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(pod)
 		if err != nil {
 			return "", err
 		}
-		_ = depl
-
 		// set new resource limits
-		cpuval, _ := strconv.ParseInt(lim.CPUusagesec, 10, 64)
-		memval, _ := strconv.ParseInt(lim.Meminbytes, 10, 64)
-		newlim := v1.ResourceList{
-			v1.ResourceCPU:    *resource.NewQuantity(cpuval, resource.DecimalSI),
-			v1.ResourceMemory: *resource.NewQuantity(memval, resource.DecimalSI),
-		}
-		depl.Spec.Template = v1.PodTemplateSpec{
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{
-						Resources: v1.ResourceRequirements{
-							Limits:   newlim,
-							Requests: newlim,
-						},
-					},
-				},
-			},
+		depl.Spec.Template = podwithlimits(lim)
+		_, err = cs.ExtensionsV1beta1().Deployments(namespace).Update(depl)
+		if err != nil {
+			return "", err
 		}
 		supervisor = "Deployment-ReplicaSet"
 	}
-	return fmt.Sprintf("Seems like '%s' is a pod supervised by an '%s', updated it", pod, supervisor), nil
+	return fmt.Sprintf("Seems like '%s' is a pod supervised by an '%s'. I've now updated it with new resource limits", pod, supervisor), nil
+}
+
+func podwithlimits(lim rescon) v1.PodTemplateSpec {
+	cpuval, _ := strconv.ParseInt(lim.CPUusagesec, 10, 64)
+	memval, _ := strconv.ParseInt(lim.Meminbytes, 10, 64)
+	newlim := v1.ResourceList{
+		v1.ResourceCPU:    *resource.NewQuantity(cpuval, resource.DecimalSI),
+		v1.ResourceMemory: *resource.NewQuantity(memval, resource.DecimalSI),
+	}
+	return v1.PodTemplateSpec{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Resources: v1.ResourceRequirements{
+						Limits:   newlim,
+						Requests: newlim,
+					},
+				},
+			},
+		},
+	}
 }
