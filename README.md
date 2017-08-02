@@ -8,7 +8,7 @@ totally new to you. Read on._
 - [What's this about and why should I care?](#whats-this-about-and-why-should-i-care)
 - [Goals and non-goals of resorcerer](#goals-and-non-goals-of-resorcerer)
 - [Setup](#setup)
-	- [Launch cAdvisor and Prometheus](#launch-cadvisor-and-prometheus)
+	- [Launch Prometheus](#launch-prometheus)
 	- [Launch resorcerer](#launch-resorcerer)
 	- [Development](#development)
 - [Usage](#usage)
@@ -48,7 +48,7 @@ however, `resorcerer` itself will work on any Kubernetes cluster.
 
 The following assumes OpenShift 1.5 or later.
 
-### Launch cAdvisor and Prometheus
+### Launch Prometheus
 
 Following the nice tutorial by [Robust Perception](https://www.robustperception.io/openshift-and-prometheus/)
 we set up our Prometheus environment as follows (or you simply launch `deployments/promup.sh` which includes the following steps):
