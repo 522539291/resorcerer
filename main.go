@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -29,7 +30,19 @@ var (
 )
 
 func init() {
-	loadenvs()
+	// try to get the config via environment variables and
+	// if that's not possible set sensible defaults:
+	if envd := os.Getenv("DEBUG"); envd != "" {
+		log.SetLevel(log.DebugLevel)
+	}
+	if promep = os.Getenv("PROM_API"); promep == "" {
+		log.Printf("Can't find a PROM_API environment variable, using default prometheus.resorcerer.svc:9090")
+		promep = "prometheus.resorcerer.svc:9090"
+	}
+	if targetns = os.Getenv("TARGET_NAMESPACE"); targetns == "" {
+		log.Printf("Can't find a TARGET_NAMESPACE environment variable, using default resorcerer")
+		targetns = "resorcerer"
+	}
 	consumption = make(map[string]rescon)
 }
 

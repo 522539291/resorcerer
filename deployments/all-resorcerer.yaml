@@ -1,17 +1,18 @@
-apiVersion:       extensions/v1beta1
-kind:             Deployment
+apiVersion:           extensions/v1beta1
+kind:                 Deployment
 metadata:
-  name:           resorcerer
+  name:               resorcerer
 spec:
-  replicas:       1
+  replicas:           1
   template:
     metadata:
       labels:
-        app:      resorcerer
+        app:          resorcerer
     spec:
       containers:
-      - name:     resorcerer
-        image:    quay.io/mhausenblas/resorcerer:0.6.8
+      - name:         resorcerer
+        image:        quay.io/mhausenblas/resorcerer:0.6.14
         env:
-        - name:   PROM_API
-          value:  "http://prometheus:9090"
+        - name:       PROM_API
+          value:      "http://prometheus:9090"
+      serviceAccount: vpa
