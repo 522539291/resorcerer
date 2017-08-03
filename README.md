@@ -119,9 +119,7 @@ Explains how to use the `resorcerer` HTTP API.
 
 ### HTTP API
 
-Either locally against `PROM_API` or in-cluster against base service FQDN `resorcerer:8080`
-(and assuming that if you haven't set the target namespace via `TARGET_NAMESPACE` then you're fine with operating on the `resorcerer` namespace)
-you can perform the operations as described in the following.
+The following is against a base URL `$RESORCERER`—something like `http://resorcerer-resorcerer.192.168.99.100.nip.io`)—and operating in the default `resorcerer` namespace. You can perform the operations as described in the following.
 
 #### Observation
 
@@ -131,7 +129,14 @@ To observe $CONTAINER in $POD for period $PERIOD (with valid time units "s", "m"
 GET /observation/$POD/$CONTAINER?period=$PERIOD
 ```
 
-For example: `http localhost:8080/observation/twocontainers/sise?period=5m`
+For example:
+
+```
+$ http $RESORCERER/observation/nginx/nginx?period=1h
+HTTP/1.1 200 OK
+
+Successfully observed container 'nginx' in pod 'nginx'
+```
 
 #### Recommendations
 
@@ -144,13 +149,15 @@ GET /recommendation/$POD/$CONTAINER
 For example:
 
 ```
-$ http localhost:8080/recommendation/twocontainers/sise
+$ http $RESORCERER/recommendation/nginx/nginx
+HTTP/1.1 200 OK
+
 {
-    "container": "sise",
-    "pod": "twocontainers",
+    "container": "nginx",
+    "pod": "nginx",
     "resources": {
-        "cpu": "0.000016975922339584197",
-        "mem": "19906560"
+        "cpu": "0.00387342659078205",
+        "mem": "9109504"
     }
 }
 ```
@@ -160,16 +167,27 @@ $ http localhost:8080/recommendation/twocontainers/sise
 To adjust the resource consumption for $CONTAINER in $POD do:
 
 ```
-$ http POST /adjustment/$POD/$CONTAINER cpu=10m mem=10416128
+$ http POST /adjustment/$POD/$CONTAINER cpu=$CPUSEC mem=$MEMINBYTES
 ```
 
 Note that above means effectively manipulating `spec.containers[].resources.limits/requests` and causing a new pod being launched.
 There are ATM no in-place adjustments possible since the primitives are not in place yet, cf. [ISSUE-5774](https://github.com/kubernetes/kubernetes/issues/5774).
 
-Following observations (for K8S 1.5):
+Also, note the following (tested for K8S 1.5):
 
-- the minimum memory limit allowed is 4MB
-- the minimum CPU seconds limit allowed is 1 millicore (== 0.001 core)
+- the minimum CPU seconds limit allowed is `1 millicore`, that is, the minimum `$CPUSEC` you can set is `0.001`.
+- the minimum memory limit allowed is `4MB`, , that is, the minimum `$MEMINBYTES` you can set is `4000000`.
+
+Note that `resorcerer` enforces those minimum limits, that is, even if you try to set lower limits they will be ignored and above limits will be used in their place.
+
+For example:
+
+```
+$ http POST $RESORCERER/adjustment/nginx/nginx cpu=0.01 mem=5000000
+HTTP/1.1 200 OK
+
+Pod 'nginx' is supervised by 'Deployment/RS' - now updated it with new resource limits
+```
 
 ## Architecture
 
