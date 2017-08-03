@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/resource"
 	"k8s.io/client-go/pkg/api/v1"
@@ -47,18 +46,13 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// We need to distinguish between stuff that lives in corev1 (Pod, RC)
-	// and in extensionsV1Beta (Deployments, RS)
-	standalone := true
-	po, err := cs.CoreV1().Pods(namespace).Get(pod)
-	if err != nil {
-		if !strings.HasSuffix(err.Error(), "not found") { // some other error, stop right here
+	supervisor := ""
+	switch {
+	case ispod(cs, pod): // a standalone pod (example: twocontainers)
+		po, err := cs.CoreV1().Pods(namespace).Get(pod)
+		if err != nil {
 			return "", err
 		}
-		standalone = false
-	}
-	if standalone { // a standalone pod (example: twocontainers)
-		// set new resource limits
 		t := podwithlimits(lim)
 		po.Spec = t.Spec
 		_, err = cs.CoreV1().Pods(namespace).Update(po)
@@ -66,28 +60,20 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 			return "", err
 		}
 		return fmt.Sprintf("Pod '%s' is an unsupervised pod - replaced it with new resource limits", pod), nil
-	}
-	// otherwise we're dealing with a supervised pod, so either Deployment/RS combo
-	// or a single RC or an (OpenShift-specific) DC/RC combo
-
-	// try to get the created-by annotation from the pod,
-	// which should work for corev1-supervised pods (RC case):
-	createdby, ok := po.GetAnnotations()["kubernetes.io/created-by"]
-	if !ok {
+	case isdeployment(cs, pod): // an extensionsV1Beta-supervised pod; a Deployment/RS (example: nginx)
 		depl, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(pod)
 		if err != nil {
 			return "", err
 		}
-		log.Infof("%v", depl)
-		createdby = depl.GetAnnotations()["kubernetes.io/created-by"]
-	}
-
-	stype, sid := supervisorinfo(createdby)
-	log.Infof("Supervisor info for pod '%s' is [type: '%v', ID: '%v']", pod, stype, sid)
-
-	switch stype {
-	case "ReplicationController": // corev1-supervised pod; some sort of RC (example: simpleservice)
-		rc, err := cs.CoreV1().ReplicationControllers(namespace).Get(sid)
+		// set new resource limits:
+		depl.Spec.Template = podwithlimits(lim)
+		_, err = cs.ExtensionsV1beta1().Deployments(namespace).Update(depl)
+		if err != nil {
+			return "", err
+		}
+		supervisor = "Deployment/RS"
+	case isrc(cs, pod): // corev1-supervised pod; some sort of RC (example: simpleservice)
+		rc, err := cs.CoreV1().ReplicationControllers(namespace).Get(pod)
 		if err != nil {
 			return "", err
 		}
@@ -98,21 +84,11 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 		if err != nil {
 			return "", err
 		}
-	case "ReplicaSet": // an extensionsV1Beta-supervised pod; a Deployment/RS (example: nginx)
-		depl, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(sid)
-		if err != nil {
-			return "", err
-		}
-		// set new resource limits:
-		depl.Spec.Template = podwithlimits(lim)
-		_, err = cs.ExtensionsV1beta1().Deployments(namespace).Update(depl)
-		if err != nil {
-			return "", err
-		}
+		supervisor = "RC"
 	default:
 		return fmt.Sprintf("Dude, I don't really know that kind of supervisor, sorry"), nil
 	}
-	return fmt.Sprintf("Pod '%s' is supervised by '%s %s' - now updated it with new resource limits", pod, stype, sid), nil
+	return fmt.Sprintf("Pod '%s' is supervised by '%s' - now updated it with new resource limits", pod, supervisor), nil
 }
 
 // podwithlimits creates a pod spec with new limits set as per lim.
@@ -158,4 +134,33 @@ func supervisorinfo(createdby string) (stype, sid string) {
 	name := strings.Split(oreference, "name\":\"")[1]
 	sid = strings.Split(name, "\"")[0]
 	return stype, sid
+}
+
+func ispod(cs *kubernetes.Clientset, objname string) bool {
+	_, err := cs.CoreV1().Pods("resorcerer").Get(objname)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func isdeployment(cs *kubernetes.Clientset, objname string) bool {
+	_, err := cs.ExtensionsV1beta1().Deployments("resorcerer").Get(objname)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func isrc(cs *kubernetes.Clientset, objname string) bool {
+	// the following is a horrible hack but found no other way around it for now.
+	// apparently DC/RC don't have names so have to try out some variants, say,
+	// if the pod is called foo, I'm trying foo-1, foo-2 up to foo-100 … not proud of it.
+	for i := 1; i <= 100; i++ {
+		_, err := cs.CoreV1().ReplicationControllers("resorcerer").Get(fmt.Sprintf("%s-%d", objname, i))
+		if err == nil {
+			return true
+		}
+	}
+	return false
 }
