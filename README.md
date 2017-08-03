@@ -166,6 +166,11 @@ $ http POST /adjustment/$POD/$CONTAINER cpu=10m mem=10416128
 Note that above means effectively manipulating `spec.containers[].resources.limits/requests` and causing a new pod being launched.
 There are ATM no in-place adjustments possible since the primitives are not in place yet, cf. [ISSUE-5774](https://github.com/kubernetes/kubernetes/issues/5774).
 
+Following observations (for K8S 1.5):
+
+- the minimum memory limit allowed is 4MB
+- the minimum CPU seconds limit allowed is 1 millicore (== 0.001 core)
+
 ## Architecture
 
 ![resorcerer architecture](img/resorcerer-arch.jpg)

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"strings"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/resource"
@@ -48,119 +48,154 @@ func adjust(namespace, pod, container string, lim rescon) (string, error) {
 	}
 	supervisor := ""
 	switch {
-	case ispod(cs, pod): // a standalone pod (example: twocontainers)
-		po, err := cs.CoreV1().Pods(namespace).Get(pod)
+	case ispod(cs, namespace, pod): // a corev1-standalone pod (example: twocontainers)
+		return updatepod(cs, namespace, pod, container, lim)
+	case isdeployment(cs, namespace, pod): // an extensionsV1Beta-supervised pod; a Deployment/RS (example: nginx)
+		s, err := updatedeployment(cs, namespace, pod, container, lim)
 		if err != nil {
 			return "", err
 		}
-		t := podwithlimits(lim)
-		po.Spec = t.Spec
-		_, err = cs.CoreV1().Pods(namespace).Update(po)
+		supervisor = s
+	case isrc(cs, namespace, pod): // a corev1-supervised pod; some sort of RC (example: simpleservice)
+		s, err := updaterc(cs, namespace, pod, container, lim)
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("Pod '%s' is an unsupervised pod - replaced it with new resource limits", pod), nil
-	case isdeployment(cs, pod): // an extensionsV1Beta-supervised pod; a Deployment/RS (example: nginx)
-		depl, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(pod)
-		if err != nil {
-			return "", err
-		}
-		// set new resource limits:
-		depl.Spec.Template = podwithlimits(lim)
-		_, err = cs.ExtensionsV1beta1().Deployments(namespace).Update(depl)
-		if err != nil {
-			return "", err
-		}
-		supervisor = "Deployment/RS"
-	case isrc(cs, pod): // corev1-supervised pod; some sort of RC (example: simpleservice)
-		rc, err := cs.CoreV1().ReplicationControllers(namespace).Get(pod)
-		if err != nil {
-			return "", err
-		}
-		// set new resource limits:
-		p := podwithlimits(lim)
-		rc.Spec.Template = &p
-		_, err = cs.CoreV1().ReplicationControllers(namespace).Update(rc)
-		if err != nil {
-			return "", err
-		}
-		supervisor = "RC"
+		supervisor = s
 	default:
 		return fmt.Sprintf("Dude, I don't really know that kind of supervisor, sorry"), nil
 	}
 	return fmt.Sprintf("Pod '%s' is supervised by '%s' - now updated it with new resource limits", pod, supervisor), nil
 }
 
-// podwithlimits creates a pod spec with new limits set as per lim.
-func podwithlimits(lim rescon) v1.PodTemplateSpec {
-	cpuval, _ := strconv.ParseInt(lim.CPUusagesec, 10, 64)
-	memval, _ := strconv.ParseInt(lim.Meminbytes, 10, 64)
+// withlimits creates resource requirements with limits set as per lim.
+func withlimits(lim rescon) v1.ResourceRequirements {
+	lim = ensurelow(lim)
+	cpuval, _ := resource.ParseQuantity(lim.CPUusagesec)
+	memval, _ := resource.ParseQuantity(lim.Meminbytes)
 	newlim := v1.ResourceList{
-		v1.ResourceCPU:    *resource.NewQuantity(cpuval, resource.DecimalSI),
-		v1.ResourceMemory: *resource.NewQuantity(memval, resource.DecimalSI),
+		v1.ResourceCPU:    cpuval,
+		v1.ResourceMemory: memval,
 	}
-	return v1.PodTemplateSpec{
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				{
-					Resources: v1.ResourceRequirements{
-						Limits:   newlim,
-						Requests: newlim,
-					},
-				},
-			},
-		},
+	return v1.ResourceRequirements{
+		Limits:   newlim,
+		Requests: newlim,
 	}
 }
 
-// supervisorinfo extracts the type, and ID of the supervisor,
-// using the 'kubernetes.io/created-by' annotation, if present.
-// note that since 'owner ref' is not generally available if GC is
-// not enabled we're using the annotations here to figure if it's
-// a supervised pod or not. note also that this is not really sustainable,
-// because of: https://github.com/kubernetes/kubernetes/issues/44407
-func supervisorinfo(createdby string) (stype, sid string) {
-	// we would expect to have something like the following in the createdby string:
-	// {"kind":"SerializedReference","apiVersion":"v1","reference":{"kind":"ReplicaSet","namespace":"resorcerer","name":"nginx-133933678", ...}}
-	oreference := strings.Split(createdby, "reference\":")[1]
-	switch {
-	case strings.Contains(oreference, "ReplicationController"):
-		stype = "ReplicationController"
-	case strings.Contains(oreference, "ReplicaSet"):
-		stype = "ReplicaSet"
-	default:
-		stype = "Unknown"
+// ensurelow makes sure that the resource limitations
+// don't fall below the minimal allowed ones, that is
+// CPU must be at least 1 millicore (== 0.001) and
+// memory must be at least 4MB (==4000000).
+func ensurelow(lim rescon) rescon {
+	cpu, _ := strconv.ParseFloat(lim.CPUusagesec, 64)
+	mem, _ := strconv.ParseInt(lim.Meminbytes, 10, 64)
+	sanitizedlim := lim
+	if cpu <= 0.001 { // must be at least 1 millicore (== 0.001)
+		sanitizedlim.CPUusagesec = "0.001"
 	}
-	name := strings.Split(oreference, "name\":\"")[1]
-	sid = strings.Split(name, "\"")[0]
-	return stype, sid
+	if mem < 4000000 { // must be at least 4MB (==4000000)
+		sanitizedlim.Meminbytes = "4000000"
+	}
+	return sanitizedlim
 }
 
-func ispod(cs *kubernetes.Clientset, objname string) bool {
-	_, err := cs.CoreV1().Pods("resorcerer").Get(objname)
+func ispod(cs *kubernetes.Clientset, namespace, objname string) bool {
+	_, err := cs.CoreV1().Pods(namespace).Get(objname)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func isdeployment(cs *kubernetes.Clientset, objname string) bool {
-	_, err := cs.ExtensionsV1beta1().Deployments("resorcerer").Get(objname)
+func updatepod(cs *kubernetes.Clientset, namespace, pod, container string, lim rescon) (string, error) {
+	po, err := cs.CoreV1().Pods(namespace).Get(pod)
+	if err != nil {
+		return "", err
+	}
+	for i, c := range po.Spec.Containers {
+		if c.Name == container {
+			po.Spec.Containers[i].Resources = withlimits(lim)
+		}
+	}
+	po.SetResourceVersion("")
+	var immediately int64
+	err = cs.CoreV1().Pods(namespace).Delete(pod, &v1.DeleteOptions{GracePeriodSeconds: &immediately})
+	if err != nil {
+		return "", err
+	}
+	ticker := time.NewTicker(1 * time.Second)
+	go func() {
+		for range ticker.C {
+			fmt.Print(".")
+		}
+	}()
+	time.Sleep(10 * time.Second)
+	ticker.Stop()
+	_, err = cs.CoreV1().Pods(namespace).Create(po)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Pod '%s' is an unsupervised pod - replaced it with new resource limits", pod), nil
+}
+
+func isdeployment(cs *kubernetes.Clientset, namespace, objname string) bool {
+	_, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(objname)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func isrc(cs *kubernetes.Clientset, objname string) bool {
+func updatedeployment(cs *kubernetes.Clientset, namespace, pod, container string, lim rescon) (string, error) {
+	depl, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(pod)
+	if err != nil {
+		return "", err
+	}
+	for i, c := range depl.Spec.Template.Spec.Containers {
+		if c.Name == container {
+			depl.Spec.Template.Spec.Containers[i].Resources = withlimits(lim)
+		}
+	}
+	_, err = cs.ExtensionsV1beta1().Deployments(namespace).Update(depl)
+	if err != nil {
+		return "", err
+	}
+	return "Deployment/RS", nil
+}
+
+func isrc(cs *kubernetes.Clientset, namespace, objname string) bool {
 	// the following is a horrible hack but found no other way around it for now.
 	// apparently DC/RC don't have names so have to try out some variants, say,
 	// if the pod is called foo, I'm trying foo-1, foo-2 up to foo-100 … not proud of it.
 	for i := 1; i <= 100; i++ {
-		_, err := cs.CoreV1().ReplicationControllers("resorcerer").Get(fmt.Sprintf("%s-%d", objname, i))
+		_, err := cs.CoreV1().ReplicationControllers(namespace).Get(fmt.Sprintf("%s-%d", objname, i))
 		if err == nil {
 			return true
 		}
 	}
 	return false
+}
+
+func updaterc(cs *kubernetes.Clientset, namespace, pod, container string, lim rescon) (string, error) {
+	var rc *v1.ReplicationController
+	for i := 1; i <= 100; i++ {
+		tmprc, err := cs.CoreV1().ReplicationControllers(namespace).Get(fmt.Sprintf("%s-%d", pod, i))
+		if err == nil {
+			rc = tmprc
+		}
+	}
+	if rc == nil {
+		return "", fmt.Errorf("Can't find any RC for %s", pod)
+	}
+	for i, c := range rc.Spec.Template.Spec.Containers {
+		if c.Name == container {
+			rc.Spec.Template.Spec.Containers[i].Resources = withlimits(lim)
+		}
+	}
+	_, err := cs.CoreV1().ReplicationControllers(namespace).Update(rc)
+	if err != nil {
+		return "", err
+	}
+	return "RC", nil
 }
