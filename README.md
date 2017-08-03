@@ -175,15 +175,15 @@ There are ATM no in-place adjustments possible since the primitives are not in p
 
 Also, note the following (tested for K8S 1.5):
 
-- the minimum CPU seconds limit allowed is `1 millicore`, that is, the minimum `$CPUSEC` you can set is `0.001`.
-- the minimum memory limit allowed is `4MB`, , that is, the minimum `$MEMINBYTES` you can set is `4000000`.
+- the minimum CPU seconds limit allowed is 1 millicore, that is, the minimum `$CPUSEC` you can set is `0.001`.
+- the minimum memory limit allowed is 4MB, that is, the minimum `$MEMINBYTES` you can set is `4000000`.
 
 Note that `resorcerer` enforces those minimum limits, that is, even if you try to set lower limits they will be ignored and above limits will be used in their place.
 
-For example:
+For example, to set limits to 230 millicores and 50MB:
 
 ```
-$ http POST $RESORCERER/adjustment/nginx/nginx cpu=0.01 mem=5000000
+$ http POST $RESORCERER/adjustment/nginx/nginx cpu=0.230 mem=50000000
 HTTP/1.1 200 OK
 
 Pod 'nginx' is supervised by 'Deployment/RS' - now updated it with new resource limits
