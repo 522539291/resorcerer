@@ -10,9 +10,10 @@ totally new to you. Read on._
 - [Setup](#setup)
 	- [Launch Prometheus](#launch-prometheus)
 	- [Launch resorcerer](#launch-resorcerer)
-	- [Development](#development)
 - [Usage](#usage)
-- [Architecture](#architecture)
+	- [HTTP API](#http-api)
+  - [Development](#development)
+- [Architecture](background.md#architecture)
 
 ## What's this about and why should I care?
 
@@ -69,6 +70,8 @@ for me (since I'm using Minishift for development):
 ![Prometheus dashboard](img/prom-screen-shot.png)
 
 If you're not familiar with the Prometheus [query language](https://prometheus.io/docs/querying/basics/), now is a good time to learn it.
+You can also check out exemplary [PromQL examples](background.md#promql-examples) we're using in `resorcerer`.
+
 Also, to verify the setup you might want to use `curl http://prometheus-resorcerer.192.168.99.100.nip.io/api/v1/targets`;
 see also this example of a [targets JSON](dev/example-targets.json) result file.
 
@@ -95,31 +98,13 @@ If you want an on-ramp for that, simply use `deployments/genworkload.sh` to popu
 
 When done, don't forgot to clean up with `oc delete project resorcerer`, which will remove all the resources including the project/namespace itself.
 
-### Development
-
-The `resorcerer` daemon is shipped as a container, that is, we don't do binary releases.
-If you want to extend `resorcerer`, you'll need at least Go 1.8 as well as [dep](https://github.com/golang/dep)
-to build it. Note that if you don't have `dep` installed, do `go get -u github.com/golang/dep/cmd/dep` now to install it
-and then `dep ensure` to install the dependencies. The result is an additional `vendor/` directory.
-
-Now you can use the Makefile to build the binaries and container image as you see fit, for example:
-
-```
-$ go build      # build binary for your platform, for local testing
-$ make release  # cut a new release (only maintainers, requires push access to quay.io)
-```
-
-Note that when you execute the `resorcerer` binary locally, for development purposes, you want to set
-something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io` to let it know where
-to find Prometheus.
-
 ## Usage
 
 Explains how to use the `resorcerer` HTTP API.
 
 ### HTTP API
 
-The following is against a base URL `$RESORCERER`—something like `http://resorcerer-resorcerer.192.168.99.100.nip.io`)—and operating in the default `resorcerer` namespace. You can perform the operations as described in the following.
+The following is against a base URL `$RESORCERER`—something like `http://resorcerer-resorcerer.192.168.99.100.nip.io`—and operating in the default `resorcerer` namespace. You can perform the operations as described in the following.
 
 #### Observation
 
@@ -189,59 +174,23 @@ HTTP/1.1 200 OK
 Pod 'nginx' is supervised by 'Deployment/RS' - now updated it with new resource limits
 ```
 
-## Architecture
+### Development
 
-![resorcerer architecture](img/resorcerer-arch.jpg)
+The `resorcerer` daemon is shipped as a container, that is, we don't do binary releases.
+If you want to extend `resorcerer`, you'll need at least Go 1.8 as well as [dep](https://github.com/golang/dep)
+to build it. Note that if you don't have `dep` installed, do `go get -u github.com/golang/dep/cmd/dep` now to install it
+and then `dep ensure` to install the dependencies. The result is an additional `vendor/` directory.
 
-TBD
-
-### PromQL examples
-
-Aggregate CPU usage for all containers in pod `nginx` over the last 10 minutes:
-
-```
-sum(rate(container_cpu_usage_seconds_total{container_name="nginx"}[10m]))
-```
-
-Aggregate CPU usage for pods that names start with `simple` over the last 3 minutes:
+Now you can use the Makefile to build the binaries and container image as you see fit, for example:
 
 ```
-sum(rate(container_cpu_usage_seconds_total{pod_name=~"simple.+", container_name="POD"}[3m])) without (cpu)
+$ go build      # build binary for your platform, for local testing
+$ make release  # cut a new release (only maintainers, requires push access to quay.io)
 ```
 
-Maximum value memory usage in bytes over the last 5 minutes for container `sise` in pod `twocontainers`:
-
-```
-max_over_time(container_memory_usage_bytes{pod_name="twocontainers", container_name="sise"}[5m])
-```
-
-The 99 percentile of the cumulative CPU time consumed for CPU30 in seconds over the last 60 seconds:
-
-```
-quantile_over_time(0.99,container_cpu_usage_seconds_total{cpu="cpu30"}[60s])
-```
-
-Average Resident Set Size (RSS), excl. swapped out memory:
-
-```
-avg(container_memory_rss)
-```
-
-The 5 largest RSS entries:
-
-```
-topk(5,container_memory_rss)
-```
-
-## Resources
-
-- [Hands on: Monitoring Kubernetes with Prometheus](https://coreos.com/blog/monitoring-kubernetes-with-prometheus.html)
-- [Monitoring Kubernetes with Prometheus (Kubernetes Ireland, 2016)](https://www.slideshare.net/brianbrazil/monitoring-kubernetes-with-prometheus-kubernetes-ireland-2016)
-- [Kubernetes service discovery](https://prometheus.io/docs/operating/configuration/#<kubernetes_sd_config>) configuration parameters (Prometheus docs)
-- [metrics cAdvisor](https://github.com/google/cadvisor/blob/master/metrics/prometheus.go) source_labels
-- [Prometheus Ops Metrics Example](https://github.com/openshift/origin/tree/master/examples/prometheus) from `openshift/origin`
-- [wkulhanek/openshift-prometheus](https://github.com/wkulhanek/openshift-prometheus)
-- [waynedovey/openshift-prometheus](https://github.com/waynedovey/openshift-prometheus)
+Note that when you execute the `resorcerer` binary locally, for development purposes, you want to set
+something like `export PROM_API=http://prometheus-resorcerer.192.168.99.100.nip.io` to let it know where
+to find Prometheus.
 
 ## Kudos
 
