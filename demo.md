@@ -15,11 +15,11 @@ Now we can head over to the [Prometheus dashboard](http://prometheus-resorcerer.
 for example the following queries:
 
 ```
-http://prometheus-resorcerer.192.168.99.100.nip.io/graph?g0.range_input=1h&g0.expr=sum(rate(container_cpu_usage_seconds_total%7Bcontainer_name%3D%22nginx%22%7D%5B10m%5D))&g0.tab=0&g1.range_input=1h&g1.expr=max_over_time(container_memory_usage_bytes%7Bcontainer_name%3D%22nginx%22%7D%5B30m%5D)&g1.tab=0
+http://prometheus-resorcerer.192.168.99.100.nip.io/graph?g0.range_input=30m&g0.expr=sum(rate(container_cpu_usage_seconds_total%7Bcontainer_name%3D%22nginx%22%7D%5B10m%5D))&g0.tab=0&g1.range_input=30m&g1.expr=max_over_time(container_memory_usage_bytes%7Bpod_name%3D~%22nginx.%2B%22%7D%5B30m%5D)&g1.tab=0
 
 sum(rate(container_cpu_usage_seconds_total{container_name="nginx"}[10m]))
 
-max_over_time(container_memory_usage_bytes{container_name="nginx"}[30m])
+max_over_time(container_memory_usage_bytes{pod_name=~"nginx.+"}[30m])
 ```
 
 ## Without limits
