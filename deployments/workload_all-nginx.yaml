@@ -27,7 +27,6 @@ items:
   metadata:
     annotations:
       kompose.service.type:      nodeport
-    creationTimestamp:           null
     labels:
       io.kompose.service:        nginx
     name:                        nginx
@@ -37,7 +36,6 @@ items:
       type:                      Recreate
     template:
       metadata:
-        creationTimestamp:       null
         labels:
           io.kompose.service:    nginx
       spec:
@@ -54,7 +52,6 @@ items:
           ports:
           - containerPort:       8080
           - containerPort:       8443
-          resources:             {}
           volumeMounts:
           - mountPath:           /bitnami
             name:                nginx-nginx-data
@@ -63,7 +60,6 @@ items:
         - name:                  nginx-nginx-data
           persistentVolumeClaim:
             claimName:           nginx-nginx-data
-  status:                        {}
 - apiVersion:                    v1
   kind:                          PersistentVolumeClaim
   metadata:
@@ -77,6 +73,4 @@ items:
     resources:
       requests:
         storage:                 100Mi
-  status:                        {}
 kind:                            List
-metadata:                        {}

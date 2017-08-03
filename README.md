@@ -197,10 +197,10 @@ TBD
 
 ### PromQL examples
 
-Aggregate CPU usage for all containers in pod `twocontainers` over the last 5 minutes:
+Aggregate CPU usage for all containers in pod `nginx` over the last 10 minutes:
 
 ```
-sum(rate(container_cpu_usage_seconds_total{pod_name="twocontainers"}[5m]))
+sum(rate(container_cpu_usage_seconds_total{container_name="nginx"}[10m]))
 ```
 
 Aggregate CPU usage for pods that names start with `simple` over the last 3 minutes:
