@@ -14,7 +14,7 @@ In user land we have four apps running, with a varying number of pods and some o
 
 Now, when a user starts interacting with `resorcerer` using the [HTTP API](../#http-api), two things need to be known: the pod name and the container name. If there's only a single container in a pod then the latter equals the former. Equipped with this, a typical sequence (for container `c1` in pod `p1`) would be:
 
-``
+```
 http $RESORCERER/observation/p1/c1?period=1h
 http $RESORCERER/recommendation/p1/c1
 http POST $RESORCERER/adjustment/p1/c1 cpu=0.5 mem=200000000
