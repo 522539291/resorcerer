@@ -3,6 +3,7 @@ kind:                Job
 metadata:
   name:              loadgenerator
 spec:
+  replicas:          5
   template:
     metadata:
       name:          loadgenerator
