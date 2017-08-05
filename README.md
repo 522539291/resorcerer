@@ -1,6 +1,6 @@
 # resorcerer—resource sorcerer
 
-This is an experimental implementation, a demonstrator, for automated resource consumption management in Kubernetes.
+This is an experimental implementation, a demonstrator, for automated resource consumption management in Kubernetes. To learn more about the motivation, history and background of `resorcerer`, read the blog post [Container resource consumption—too important to ignore](https://medium.com/@mhausenblas/container-resource-consumption-too-important-to-ignore-7484609a3bb7).
 
 - [Goals and non-goals of resorcerer](#goals-and-non-goals-of-resorcerer)
 - [Setup](#setup)
