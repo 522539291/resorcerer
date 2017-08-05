@@ -1,11 +1,7 @@
 # resorcerer—resource sorcerer
 
-_Do you know how much memory your app consumes? How about CPU time? What about spikes in the traffic?
-Are you still manually managing the memory and CPU constraints per container?
-Or, maybe you're not even yet there; maybe this whole resource consumption and constraints thing is
-totally new to you. Read on._
+This is an experimental implementation, a demonstrator, for automated resource consumption management in Kubernetes.
 
-- [What's this about and why should I care?](#whats-this-about-and-why-should-i-care)
 - [Goals and non-goals of resorcerer](#goals-and-non-goals-of-resorcerer)
 - [Setup](#setup)
 	- [Launch Prometheus](#launch-prometheus)
@@ -15,35 +11,15 @@ totally new to you. Read on._
   - [Development](#development)
 - [Architecture](background.md#architecture)
 
-## What's this about and why should I care?
-
-Let's see what Kubernetes practitioners have to say on this topic:
-
-> Unfortunately, Kubernetes has not yet implemented dynamic resource management, which is why we have to set resource limits for our containers. I imagine that at some point Kubernetes will start implementing a less manual way to manage resources, but this is all we have for now.
-
-Ben Visser, 12/2016, [Kubernetes - Understanding Resources](http://www.noqcks.io/note/kubernetes-resources-limits/)
-
-> Kubernetes doesn’t have dynamic resource allocation, which means that requests and limits have to be determined and set by the user. When these numbers are not known precisely for a service, a good approach is to start it with overestimated resources requests and no limit, then let it run under normal production load for a certain time: hours, days, weeks according to the nature of the service. This time should be long enough to let you collect enough metrics and be able to determine correct values with a small margin of error.
-
-Antoine Cotten, 05/2016, [1 year, lessons learned from a 0 to Kubernetes transition](https://acotten.com/post/1year-kubernetes)
-
-Now, turns out that Google's internal resource consumption stats collector & predictor—called `autopilot`—does in fact offer this automatic resource consumption tracking and management.
-As the wise Tim Hockin stated in his KubeCon 2016 talk on 'Everything You Ever Wanted To Know About Resource Scheduling' (see [slides](https://speakerdeck.com/thockin/everything-you-ever-wanted-to-know-about-resource-scheduling-dot-dot-dot-almost) | [video](https://www.youtube.com/watch?v=nWGkvrIPqJ4)):
-
-> Some 2/3 of the Borg users depend on autopilot.
-
-Already in mid 2015 the Kubernetes community—informed by Google's `autopilot` experience—raised this [issue](https://github.com/kubernetes/kubernetes/issues/10782), and in early 2017 we got a proposal and now initial work on the resulting [Vertical Pod Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) (VPA).
-
 ## Goals and non-goals of resorcerer
 
-With `resorcerer` we want to contribute to the advancement of VPAs. It's a prototypical implementation allowing users to learn more about their resource consumption footprint. It is an opinionated implementation, making a number of assumptions:
+With `resorcerer` we want to contribute to the advancement of Kubernetes [Vertical Pod Autoscalers(https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) (VPA). It's an experimental implementation, allowing users to learn more about their container resource consumption footprint. Also, `resorcerer` is an opinionated implementation, making a number of assumptions:
 
 1. Prometheus is available in the cluster.
-1. You can run `resorcerer` in privileged mode as it needs access to all necessary metrics.
+1. You can run `resorcerer` in privileged mode, as it needs access to all necessary metrics from the kubelet cAdvisor as well as the rights to update standalone and supervised pods.
 1. As much as possible should happen automatically—that's where the magic/sorcerer comes into play ;)
 
-For convenience, I've put together a simple way to deploy `resorcerer` along with Prometheus into OpenShift (see the **Setup** section),
-however, `resorcerer` itself will work on any Kubernetes cluster.
+For convenience, below you find a simple way to deploy `resorcerer` along with Prometheus into OpenShift (see the **Setup** section), however, `resorcerer` itself will work on any Kubernetes cluster.
 
 ## Setup
 
