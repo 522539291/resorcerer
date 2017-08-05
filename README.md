@@ -13,7 +13,7 @@ This is an experimental implementation, a demonstrator, for automated resource c
 
 ## Goals and non-goals of resorcerer
 
-With `resorcerer` we want to contribute to the advancement of Kubernetes [Vertical Pod Autoscalers(https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) (VPA). It's an experimental implementation, allowing users to learn more about their container resource consumption footprint. Also, `resorcerer` is an opinionated implementation, making a number of assumptions:
+With `resorcerer` we want to contribute to the advancement of Kubernetes [Vertical Pod Autoscalers](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) (VPA). It's an experimental implementation, allowing users to learn more about their container resource consumption footprint. Also, `resorcerer` is an opinionated implementation, making a number of assumptions:
 
 1. Prometheus is available in the cluster.
 1. You can run `resorcerer` in privileged mode, as it needs access to all necessary metrics from the kubelet cAdvisor as well as the rights to update standalone and supervised pods.
