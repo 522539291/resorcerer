@@ -1,0 +1,8 @@
+{
+    "container": "nginx",
+    "pod": "nginx",
+    "resources": {
+        "cpu": "0.00387342659078205",
+        "mem": "9109504"
+    }
+}

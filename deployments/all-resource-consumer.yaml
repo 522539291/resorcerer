@@ -1,0 +1,51 @@
+kind:                                     Deployment
+apiVersion:                               extensions/v1beta1
+metadata:
+  name:                                   resource-consumer
+  labels:
+    app:                                  rescon
+spec:
+  replicas:                               1
+  selector:
+    matchLabels:
+      app:                                rescon
+  template:
+    metadata:
+      name:                               rescon
+      labels:
+        app:                              rescon
+    spec:
+      containers:
+      - name:                             rc
+        image:                            gcr.io/google_containers/resource_consumer:beta4
+---
+kind:                                     Service
+apiVersion:                               v1
+metadata:
+  name:                                   resource-consumer-svc
+  labels:
+    app:                                  rescon
+spec:
+  ports:
+  - port:                                 80
+    targetPort:                           8080
+  selector:
+    app:                                  rescon
+  type:                                   LoadBalancer
+  externalTrafficPolicy:                  Cluster
+---
+kind:                                     Ingress
+apiVersion:                               extensions/v1beta1
+metadata:
+  name:                                   resource-consumer-public
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path:                             /
+        backend:
+          serviceName:                    resource-consumer-svc
+          servicePort:                    80
